@@ -271,7 +271,7 @@
                     <x-slot name="iconColor">text-[#FDBE33]</x-slot>
                     
                     <x-slot name="action">
-                         <span class="bg-amber-100/80 backdrop-blur text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-amber-200">
+                         <span class="bg-amber-100/80 backdrop-blur text-amber-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-amber-200 whitespace-nowrap">
                             {{ $dominantInsight }}
                         </span>
                     </x-slot>

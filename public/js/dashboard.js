@@ -363,6 +363,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const labels = Object.keys(peakData);
         const values = Object.values(peakData);
 
+        const maxPeakVal = values.length ? Math.max(...values) : 1;
+        const peakThreshold = maxPeakVal * 0.08; // only label bars > 8% of max
+
         new Chart(ctxPeak, {
             type: 'bar',
             data: {
@@ -370,26 +373,56 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: 'Frekuensi',
                     data: values,
-                    backgroundColor: 'rgba(244, 63, 94, 0.8)',
-                    borderRadius: 6
+                    backgroundColor: (ctx) => {
+                        const v = ctx.dataset.data[ctx.dataIndex];
+                        const opacity = 0.35 + 0.65 * (v / maxPeakVal);
+                        return `rgba(244, 63, 94, ${opacity.toFixed(2)})`;
+                    },
+                    borderRadius: 6,
+                    clip: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 28, left: 4, right: 4, bottom: 4 } },
                 plugins: {
                     legend: { display: false },
                     datalabels: {
                         color: '#64748b',
                         anchor: 'end',
                         align: 'top',
-                        display: (c) => (c.dataset.data[c.dataIndex] || 0) > 0,
-                        font: { family: "'Outfit', sans-serif", size: 11, weight: 'bold' }
+                        display: (c) => (c.dataset.data[c.dataIndex] || 0) >= peakThreshold,
+                        font: { family: "'Outfit', sans-serif", size: 9, weight: 'bold' },
+                        clamp: false
                     }
                 },
                 scales: {
-                    y: { display: false, beginAtZero: true },
-                    x: { display: false, grid: { display: false } }
+                    y: {
+                        display: true,
+                        beginAtZero: true,
+                        max: Math.ceil(maxPeakVal * 1.1 / 50) * 50,
+                        border: { display: false },
+                        grid: { color: 'rgba(148,163,184,0.12)', drawTicks: false },
+                        ticks: {
+                            font: { family: "'Outfit', sans-serif", size: 9 },
+                            color: '#b0bec5',
+                            padding: 4,
+                            maxTicksLimit: 4,
+                            callback: (v) => v === 0 ? '' : v
+                        }
+                    },
+                    x: {
+                        display: true,
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: {
+                            font: { family: "'Outfit', sans-serif", size: 9, weight: '500' },
+                            color: '#94a3b8',
+                            maxRotation: 0,
+                            callback: (val, i) => i % 2 === 0 ? labels[i] : ''
+                        }
+                    }
                 }
             }
         });
@@ -400,6 +433,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (ctxDay) {
         const dayValues = data.dayOfWeekData || [];
 
+        const minDayVal = dayValues.length ? Math.min(...dayValues) : 0;
+        const maxDayVal = dayValues.length ? Math.max(...dayValues) : 1;
+        const daySpread = maxDayVal - minDayVal;
+        const yMin = Math.max(0, Math.floor(minDayVal - daySpread * 0.8));
+        const yMax = Math.ceil(maxDayVal + daySpread * 0.5);
+
         new Chart(ctxDay, {
             type: 'bar',
             data: {
@@ -407,14 +446,19 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: 'Avg Flights',
                     data: dayValues,
-                    backgroundColor: 'rgba(31, 60, 136, 0.8)',
-                    borderRadius: 6,
-                    hoverBackgroundColor: COLOR_SECONDARY
+                    backgroundColor: (ctx) => {
+                        // Highlight weekend bars
+                        return ctx.dataIndex >= 5 ? 'rgba(99, 102, 241, 0.75)' : 'rgba(31, 60, 136, 0.82)';
+                    },
+                    borderRadius: 8,
+                    hoverBackgroundColor: COLOR_SECONDARY,
+                    clip: false
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                layout: { padding: { top: 30 } },
                 onHover: (event, chartElement) => {
                     event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
                 },
@@ -426,16 +470,39 @@ document.addEventListener("DOMContentLoaded", function () {
                 plugins: {
                     legend: { display: false },
                     datalabels: {
-                        color: '#64748b',
+                        color: '#475569',
                         anchor: 'end',
                         align: 'top',
                         display: (c) => (c.dataset.data[c.dataIndex] || 0) > 0,
-                        font: { family: "'Outfit', sans-serif", size: 11, weight: 'bold' }
+                        font: { family: "'Outfit', sans-serif", size: 11, weight: 'bold' },
+                        formatter: (value) => Math.round(value).toLocaleString(),
+                        clamp: false
                     }
                 },
                 scales: {
-                    y: { display: false, beginAtZero: true },
-                    x: { display: false, grid: { display: false } }
+                    y: {
+                        display: true,
+                        min: yMin,
+                        max: yMax,
+                        border: { display: false },
+                        grid: { color: 'rgba(148,163,184,0.12)', drawTicks: false },
+                        ticks: {
+                            font: { family: "'Outfit', sans-serif", size: 10 },
+                            color: '#b0bec5',
+                            padding: 4,
+                            maxTicksLimit: 4,
+                            callback: (v) => v.toLocaleString()
+                        }
+                    },
+                    x: {
+                        display: true,
+                        grid: { display: false },
+                        border: { display: false },
+                        ticks: {
+                            font: { family: "'Outfit', sans-serif", size: 11, weight: '600' },
+                            color: '#94a3b8'
+                        }
+                    }
                 }
             }
         });

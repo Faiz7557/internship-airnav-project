@@ -1,7 +1,7 @@
 @props(['title', 'subtitle' => null, 'chartId', 'height' => '300px', 'icon' => null, 'iconBg' => 'bg-blue-50', 'iconColor' => 'text-blue-600', 'action' => null])
 
-<div {{ $attributes->merge(['class' => 'glass-card p-6 rounded-[2rem] relative flex flex-col h-full hover:shadow-lg transition-all duration-300 border border-white/60']) }}>
-    <div class="flex justify-between items-start mb-6 gap-4">
+<div {{ $attributes->merge(['class' => 'glass-card p-6 rounded-[2rem] relative flex flex-col hover:shadow-lg transition-all duration-300 border border-white/60']) }}>
+    <div class="flex justify-between items-start mb-4 gap-4">
         <!-- Title & Icon -->
         <div class="flex items-center gap-3">
              @if($icon)
@@ -19,15 +19,17 @@
 
         <!-- Optional Action (Legend, Toggle, Badge) -->
         @if($action)
-            <div>
+            <div class="shrink-0">
                 {{ $action }}
             </div>
         @endif
     </div>
     
-    <!-- Chart Canvas Container -->
-    <div class="flex-grow w-full relative" style="min-height: {{ $height }}; height: {{ $height }};">
-        <canvas id="{{ $chartId }}" class="w-full" style="height: 100%;"></canvas>
-        {{ $slot }}
+    <!-- Chart Canvas: fixed height wrapper so Chart.js can measure it -->
+    <div class="relative w-full" style="height: {{ $height }};">
+        <canvas id="{{ $chartId }}" class="absolute inset-0 w-full h-full"></canvas>
     </div>
+
+    <!-- Slot: additional content (legends, etc.) rendered freely below the chart -->
+    {{ $slot }}
 </div>
