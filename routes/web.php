@@ -15,3 +15,4 @@ Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
 Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
 Route::get('/summary/data', [SummaryController::class, 'getData'])->name('summary.data');
 Route::post('/summary/export', [SummaryController::class, 'exportExcel'])->name('summary.export');
+Route::post('/summary/export-pdf', [App\Http\Controllers\SummaryController::class, 'exportPDF'])->name('summary.export_pdf');

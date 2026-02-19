@@ -224,6 +224,48 @@ class SummaryController extends Controller
         }
     }
 
+    public function exportPDF(Request $request)
+    {
+        $month = $request->input('month');
+        $year = $request->input('year');
+        
+        $data = DailyFlightStat::whereYear('date', $year)
+                ->whereMonth('date', $month)
+                ->orderBy('date', 'asc')
+                ->get();
+
+        if ($data->isEmpty()) {
+            return redirect()->back()->with('error', 'Tidak ada data untuk diexport.');
+        }
+
+        $peakHours = [];
+        for ($i = 0; $i < 24; $i++) {
+            $k = str_pad($i, 2, '0', STR_PAD_LEFT) . ':00';
+            $peakHours[$k] = 0;
+        }
+        foreach ($data as $row) {
+            $hour = substr($row->peak_hour, 0, 5);
+            if (isset($peakHours[$hour])) $peakHours[$hour]++;
+        }
+
+        $chartPeak = $request->input('chart_peak_img');
+        $chartTraffic = $request->input('chart_traffic_img');
+        $chartTabulation = $request->input('chart_tabulation_img');
+
+        $namaBulan = Carbon::create($year, $month)->format('F_Y');
+        $fileName = 'Laporan_PDF_' . $namaBulan . '.pdf';
+
+        $pdf = app('dompdf.wrapper');
+        $pdf->loadView('pdf.summary_report', compact(
+            'data', 'peakHours', 'month', 'year', 'namaBulan',
+            'chartPeak', 'chartTraffic', 'chartTabulation'
+        ));
+
+        $pdf->setPaper('A4', 'portrait');
+
+        return $pdf->download($fileName);
+    }
+
     private function applyTableStyle($sheet, $range)
     {
         $sheet->getStyle($range)->applyFromArray([
