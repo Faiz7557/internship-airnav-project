@@ -174,8 +174,8 @@ class UploadController extends Controller
                 $intDep = (int) ($rawArray[$idx_int_dep][$colIndex] ?? 0);
                 $trainingArr = (int) ($rawArray[$idx_trg_arr][$colIndex] ?? 0);
                 $trainingDep = (int) ($rawArray[$idx_trg_dep][$colIndex] ?? 0);
-                $totalArr = $domArr + $intArr + $trainingArr;
-                $totalDep = $domDep + $intDep + $trainingDep;
+                $totalArr = $domArr + $intArr;
+                $totalDep = $domDep + $intDep;
                 $totalFlights = $totalArr + $totalDep;
 
                 DailyFlightStat::updateOrCreate(
