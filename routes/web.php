@@ -8,6 +8,7 @@ if (file_exists(__DIR__ . '/debug.php')) {
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\SummaryController;
+use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -23,5 +24,5 @@ Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
 Route::get('/summary/data', [SummaryController::class, 'getData'])->name('summary.data');
 Route::post('/summary/export', [SummaryController::class, 'exportExcel'])->name('summary.export');
 
-use App\Http\Controllers\Admin\EventController;
 Route::resource('admin/events', EventController::class)->names('admin.events');
+Route::post('/summary/export-pdf', [App\Http\Controllers\SummaryController::class, 'exportPDF'])->name('summary.export_pdf');

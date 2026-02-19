@@ -66,8 +66,7 @@
             </div>
             
             <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-xl">
-                <select id="filterMonth" onchange="updateYearOptions()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[150px]">
-                    <option value="" disabled selected>Pilih Bulan</option>
+                <select id="filterMonth" onchange="updateYearOptions()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[120px]">    <option value="" disabled selected>Pilih Bulan</option>
                     @foreach($availableDates->keys()->sort() as $month)
                         <option value="{{ $month }}">
                             {{ DateTime::createFromFormat('!m', $month)->format('F') }}
@@ -83,35 +82,47 @@
                     <span>Tampilkan</span>
                 </button>
 
-                <div class="relative ml-2 border-l border-slate-300 pl-4">
-                    <button id="dropdownExportBtn" disabled class="opacity-50 cursor-not-allowed text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center" type="button">
-                        Export Excel 
-                        <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 10 6">
-                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"/>
+                <div class="relative ml-2 border-l border-slate-300 pl-4 flex items-center gap-2">
+                    
+                    <span class="text-xs font-bold text-slate-500 uppercase mr-1">
+                        Export
+                    </span>
+
+                    <button id="btnExportPDF" disabled type="button" onclick="exportPDF()" class="opacity-50 cursor-not-allowed bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 shadow-sm transition hover:scale-105 focus:ring-2 focus:ring-red-300 flex items-center justify-center" title="Download PDF">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
                         </svg>
                     </button>
 
-                    <div id="dropdownExport" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-64 absolute right-0 mt-2 border border-slate-100">
+                    <button id="dropdownExportBtn" disabled type="button" class="opacity-50 cursor-not-allowed bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-sm transition hover:scale-105 focus:ring-2 focus:ring-green-300 flex items-center justify-center" title="Download Excel">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="8" y1="13" x2="16" y2="17"></line>
+                            <line x1="16" y1="13" x2="8" y2="17"></line>
+                        </svg>
+                    </button>
+
+                    <div id="dropdownExport" class="z-50 hidden bg-white divide-y divide-gray-100 rounded-lg shadow-xl w-56 absolute right-0 top-full mt-2 border border-slate-100 origin-top-right">
                         <ul class="py-2 text-sm text-gray-700">
                             <li>
-                                <a href="javascript:void(0)" onclick="exportExcel('all')" class="block px-4 py-2 hover:bg-gray-100 font-bold text-green-700">Export Semua</a>
+                                <a href="javascript:void(0)" onclick="exportExcel('all')" class="block px-4 py-2 hover:bg-green-50 text-green-700 font-bold flex items-center gap-2">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Export Semua
+                                </a>
                             </li>
-                            <li>
-                                <a href="javascript:void(0)" onclick="exportExcel('table')" class="block px-4 py-2 hover:bg-gray-100">Hanya Movement Twr-Afis</a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0)" onclick="exportExcel('peak')" class="block px-4 py-2 hover:bg-gray-100">Hanya Grafik Movement</a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0)" onclick="exportExcel('traffic')" class="block px-4 py-2 hover:bg-gray-100">Hanya Grafik Dep-Arr</a>
-                            </li>
-                            <li>
-                                <a href="javascript:void(0)" onclick="exportExcel('tabulation')" class="block px-4 py-2 hover:bg-gray-100">Hanya Grafik Peak Hours</a>
-                            </li>
+                            <li><a href="javascript:void(0)" onclick="exportExcel('table')" class="block px-4 py-2 hover:bg-gray-100">Hanya Movement Twr-Afis</a></li>
+                            <li><a href="javascript:void(0)" onclick="exportExcel('peak')" class="block px-4 py-2 hover:bg-gray-100">Hanya Grafik Movement</a></li>
+                            <li><a href="javascript:void(0)" onclick="exportExcel('traffic')" class="block px-4 py-2 hover:bg-gray-100">Hanya Grafik Dep-Arr</a></li>
+                            <li><a href="javascript:void(0)" onclick="exportExcel('tabulation')" class="block px-4 py-2 hover:bg-gray-100">Hanya Grafik Peak Hours</a></li>
                         </ul>
                     </div>
                 </div>
-                </div>
+            </div>
         </div>
     </section>
 
@@ -275,12 +286,16 @@
             
             const btnShow = document.getElementById('btn-show');
             const btnExport = document.getElementById('dropdownExportBtn');
+            const btnPDF = document.getElementById('btnExportPDF');
 
             btnShow.disabled = true;
             btnShow.classList.add('opacity-70');
             
             btnExport.disabled = true;
             btnExport.classList.add('opacity-50', 'cursor-not-allowed');
+
+            btnPDF.disabled = true;
+            btnPDF.classList.add('opacity-50', 'cursor-not-allowed');
 
             fetch(`{{ route('summary.data') }}?month=${monthVal}&year=${yearVal}`)
                 .then(response => response.json())
@@ -300,6 +315,9 @@
 
                         btnExport.disabled = false;
                         btnExport.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                        btnPDF.disabled = false;
+                        btnPDF.classList.remove('opacity-50', 'cursor-not-allowed');
 
                     } else {
                         alert("Data tidak ditemukan.");
@@ -566,74 +584,118 @@
         }   
 
     const dropdownBtn = document.getElementById('dropdownExportBtn');
-        const dropdownMenu = document.getElementById('dropdownExport');
+    const dropdownMenu = document.getElementById('dropdownExport');
 
-        dropdownBtn.addEventListener('click', function(e) {
-            if (this.disabled) return;
-            e.stopPropagation();
-            dropdownMenu.classList.toggle('hidden');
-        });
+    dropdownBtn.addEventListener('click', function(e) {
+        if (this.disabled) return;
+        e.stopPropagation();
+        dropdownMenu.classList.toggle('hidden');
+    });
 
-        document.addEventListener('click', function(e) {
-            if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-                dropdownMenu.classList.add('hidden');
-            }
-        });
-
-        function exportExcel(type) {
-            const monthVal = document.getElementById('filterMonth').value;
-            const yearVal = document.getElementById('filterYear').value;
-
-            if (!monthVal || !yearVal) {
-                alert("Mohon pilih Bulan dan Tahun, lalu klik Tampilkan terlebih dahulu.");
-                return;
-            }
-
-            if (!chartPeak || !chartTraffic || !chartTabulation) {
-                alert("Grafik belum dimuat sepenuhnya. Silakan klik tombol Tampilkan.");
-                return;
-            }
-
-            const imgPeak = chartPeak.toBase64Image();
-            const imgTraffic = chartTraffic.toBase64Image();
-            const imgTabulation = chartTabulation.toBase64Image();
-
-            document.getElementById('exportMonth').value = monthVal;
-            document.getElementById('exportYear').value = yearVal;
-            document.getElementById('exportType').value = type;
-            document.getElementById('exportImgPeak').value = imgPeak;
-            document.getElementById('exportImgTraffic').value = imgTraffic;
-            document.getElementById('exportImgTabulation').value = imgTabulation;
-
-            document.getElementById('exportForm').submit();
+    document.addEventListener('click', function(e) {
+        if (!dropdownBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
             dropdownMenu.classList.add('hidden');
         }
+    });
 
-        document.addEventListener("DOMContentLoaded", function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const paramMonth = urlParams.get('month');
-            const paramYear = urlParams.get('year');
+    function exportExcel(type) {
+        const monthVal = document.getElementById('filterMonth').value;
+        const yearVal = document.getElementById('filterYear').value;
 
-            if (paramMonth && paramYear) {
-                const monthSelect = document.getElementById('filterMonth');
-                const yearSelect = document.getElementById('filterYear');
-                const btnShow = document.getElementById('btn-show');
+        if (!monthVal || !yearVal) {
+            alert("Mohon pilih Bulan dan Tahun, lalu klik Tampilkan terlebih dahulu.");
+            return;
+        }
 
-                monthSelect.value = paramMonth;
-                updateYearOptions();
+        if (!chartPeak || !chartTraffic || !chartTabulation) {
+            alert("Grafik belum dimuat sepenuhnya. Silakan klik tombol Tampilkan.");
+            return;
+        }
 
-                let yearExists = Array.from(yearSelect.options).some(option => option.value == paramYear);
-                
-                if (yearExists) {
-                    yearSelect.value = paramYear;
-                    yearSelect.disabled = false;
-                    btnShow.disabled = false;
-                    btnShow.classList.remove('opacity-50', 'cursor-not-allowed');
+        const setWhiteBg = (chart) => {
+            const ctx = chart.canvas.getContext('2d');
+            ctx.save(); ctx.globalCompositeOperation = 'destination-over';
+            ctx.fillStyle = 'white'; ctx.fillRect(0, 0, chart.canvas.width, chart.canvas.height);
+            const img = chart.canvas.toDataURL('image/jpeg', 0.8); // Format JPEG 80%
+            ctx.restore();
+            return img;
+        };
 
-                    loadData();
-                }
+        const imgPeak = setWhiteBg(chartPeak);
+        const imgTraffic = setWhiteBg(chartTraffic);
+        const imgTabulation = setWhiteBg(chartTabulation);
+
+        document.getElementById('exportMonth').value = monthVal;
+        document.getElementById('exportYear').value = yearVal;
+        document.getElementById('exportType').value = type;
+        document.getElementById('exportImgPeak').value = imgPeak;
+        document.getElementById('exportImgTraffic').value = imgTraffic;
+        document.getElementById('exportImgTabulation').value = imgTabulation;
+
+        document.getElementById('exportForm').submit();
+        dropdownMenu.classList.add('hidden');
+    }
+
+    function exportPDF() {
+        const monthVal = document.getElementById('filterMonth').value;
+        const yearVal = document.getElementById('filterYear').value;
+
+        if (!monthVal || !yearVal) {
+            alert("Mohon pilih Bulan dan Tahun, lalu klik Tampilkan terlebih dahulu.");
+            return;
+        }
+
+        if (!chartPeak || !chartTraffic || !chartTabulation) {
+            alert("Grafik belum dimuat sepenuhnya. Silakan klik tombol Tampilkan.");
+            return;
+        }
+
+        const imgPeak = chartPeak.toBase64Image();
+        const imgTraffic = chartTraffic.toBase64Image();
+        const imgTabulation = chartTabulation.toBase64Image();
+
+        document.getElementById('exportMonth').value = monthVal;
+        document.getElementById('exportYear').value = yearVal;
+        document.getElementById('exportImgPeak').value = imgPeak;
+        document.getElementById('exportImgTraffic').value = imgTraffic;
+        document.getElementById('exportImgTabulation').value = imgTabulation;
+
+        const form = document.getElementById('exportForm');
+        const originalAction = form.action;
+        
+        form.action = "{{ route('summary.export_pdf') }}";
+        form.submit();
+
+        setTimeout(() => {
+            form.action = originalAction;
+        }, 100);
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const paramMonth = urlParams.get('month');
+        const paramYear = urlParams.get('year');
+
+        if (paramMonth && paramYear) {
+            const monthSelect = document.getElementById('filterMonth');
+            const yearSelect = document.getElementById('filterYear');
+            const btnShow = document.getElementById('btn-show');
+
+            monthSelect.value = paramMonth;
+            updateYearOptions();
+
+            let yearExists = Array.from(yearSelect.options).some(option => option.value == paramYear);
+            
+            if (yearExists) {
+                yearSelect.value = paramYear;
+                yearSelect.disabled = false;
+                btnShow.disabled = false;
+                btnShow.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                loadData();
             }
-        });
+        }
+    });
     </script>
 </body>
 </html>
