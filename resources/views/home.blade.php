@@ -14,6 +14,20 @@
         .banner-slide {
             transition: opacity 1.5s ease-in-out;
         }
+
+        @keyframes scroll-cards {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); } 
+        }
+
+        .animate-scroll {
+            animation: scroll-cards 30s linear infinite;
+            width: max-content;
+        }
+
+        .animate-scroll:hover {
+            animation-play-state: paused;
+        }
     </style>
 </head>
 <body class="bg-white m-0 p-0 overflow-x-hidden relative overflow-y-scroll">
@@ -80,7 +94,7 @@
         <div class="max-w-7xl mx-auto">
             <div class="flex items-center justify-between mb-10">
                 <div>
-                    <h2 class="text-3xl font-bold text-[#1F3C88]">Penerbangan Bulan Ini</h2>
+                    <h2 class="text-3xl font-bold text-[#1F3C88]">Penerbangan {{ $nama_bulan }}</h2>
                     <p class="text-slate-400 mt-1">Ringkasan statistik berdasarkan data bulan terakhir.</p>
                 </div>
                 <button class="text-sm font-semibold text-[#1F3C88] hover:underline transition">
@@ -88,76 +102,104 @@
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
-                
-                <div class="bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group">
-                    <div class="absolute -right-6 -top-6 bg-white/10 w-32 h-32 rounded-full blur-3xl group-hover:bg-white/20 transition"></div>
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-2 bg-white/10 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            <div class="overflow-hidden w-full py-4">
+                <div class="flex gap-6 animate-scroll">
+                    
+                    @for ($i = 0; $i < 2; $i++)
+                        <div class="w-[320px] shrink-0 bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group cursor-pointer">
+                            <div class="absolute -right-6 -top-6 bg-white/10 w-32 h-32 rounded-full blur-3xl group-hover:bg-white/20 transition"></div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 bg-white/10 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                                </div>
+                                <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider">Total Pergerakan</h3>
+                            </div>
+                            <div class="flex items-end gap-3">
+                                <span class="text-5xl font-bold">{{ $total }}</span>
+                                <div class="mb-1 flex items-center text-sm font-medium {{ $growth >= 0 ? 'text-green-400' : 'text-red-400' }}">
+                                    @if($growth >= 0) <span>▲ {{ $growth }}%</span> @else <span>▼ {{ abs($growth) }}%</span> @endif
+                                </div>
+                            </div>
+                            <p class="text-xs text-blue-200 opacity-70 mt-1">vs bulan lalu</p>
                         </div>
-                        <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider">Total Pergerakan</h3>
-                    </div>
-                    <div class="flex items-end gap-3">
-                        <span class="text-5xl font-bold">{{ $total }}</span>
-                        <div class="mb-1 flex items-center text-sm font-medium {{ $growth >= 0 ? 'text-green-400' : 'text-red-400' }}">
-                            @if($growth >= 0)
-                                <span>▲ {{ $growth }}%</span>
-                            @else
-                                <span>▼ {{ abs($growth) }}%</span>
-                            @endif
-                        </div>
-                    </div>
-                    <p class="text-xs text-blue-200 opacity-70 mt-1">vs bulan lalu</p>
-                </div>
 
-                <div class="bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group">
-                    <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider mb-6 flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /></svg>
-                        Komposisi Traffic
-                    </h3>
-                    <div class="flex justify-between items-end mb-3">
-                        <div>
-                                <div class="text-3xl font-bold">{{ $dom_pct }}%</div>
-                                <div class="text-xs text-blue-200 mt-1">Domestik</div>
+                        <div class="w-[320px] shrink-0 bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group cursor-pointer">
+                            <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider mb-6 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" /></svg>
+                                Komposisi Traffic
+                            </h3>
+                            <div class="flex justify-between items-end mb-3">
+                                <div><div class="text-3xl font-bold">{{ $dom_pct }}%</div><div class="text-xs text-blue-200 mt-1">Domestik</div></div>
+                                <div class="text-right"><div class="text-3xl font-bold text-orange-400">{{ $int_pct }}%</div><div class="text-xs text-orange-200 mt-1">Internasional</div></div>
+                            </div>
+                            <div class="w-full h-2 bg-blue-900/50 rounded-full overflow-hidden flex">
+                                <div class="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: {{ $dom_pct }}%"></div>
+                                <div class="h-full bg-orange-400" style="width: {{ $int_pct }}%"></div>
+                            </div>
                         </div>
-                        <div class="text-right">
-                                <div class="text-3xl font-bold text-orange-400">{{ $int_pct }}%</div>
-                                <div class="text-xs text-orange-200 mt-1">Internasional</div>
-                        </div>
-                    </div>
-                    <div class="w-full h-2 bg-blue-900/50 rounded-full overflow-hidden flex">
-                        <div class="h-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.5)]" style="width: {{ $dom_pct }}%"></div>
-                        <div class="h-full bg-orange-400" style="width: {{ $int_pct }}%"></div>
-                    </div>
-                </div>
 
-                <div class="bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group">
-                    <div class="absolute -left-6 -bottom-6 bg-red-500/20 w-32 h-32 rounded-full blur-3xl group-hover:bg-red-500/30 transition"></div>
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="p-2 bg-red-500/20 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div class="w-[320px] shrink-0 bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group cursor-pointer">
+                            <div class="absolute -left-6 -bottom-6 bg-red-500/20 w-32 h-32 rounded-full blur-3xl group-hover:bg-red-500/30 transition"></div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 bg-red-500/20 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider">Jam Sibuk (Peak)</h3>
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-5xl font-bold text-red-400">{{ $jam_sibuk }}</span>
+                                <span class="text-base font-light opacity-80">WIB</span>
+                            </div>
                         </div>
-                        <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider">Jam Sibuk (Peak)</h3>
-                    </div>
-                    <div class="flex items-baseline gap-2">
-                        <span class="text-5xl font-bold text-red-400">{{ $jam_sibuk }}</span>
-                        <span class="text-base font-light opacity-80">WIB</span>
-                    </div>
-                </div>
 
-                <div class="bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 bg-green-500/10 w-full h-full blur-md"></div>
-                    <div class="flex items-center gap-3 mb-4 relative z-10">
-                        <div class="p-2 bg-green-500/20 rounded-lg">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <div class="w-[320px] shrink-0 bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group cursor-pointer">
+                            <div class="absolute top-0 right-0 bg-green-500/10 w-full h-full blur-md"></div>
+                            <div class="flex items-center gap-3 mb-4 relative z-10">
+                                <div class="p-2 bg-green-500/20 rounded-lg">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                </div>
+                                <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider">Status Runway</h3>
+                            </div>
+                            <div class="relative z-10">
+                                <span class="text-4xl font-bold {{ $runway_color }}">{{ $runway_status }}</span>
+                                <p class="text-xs text-blue-200 mt-2 opacity-80">Load: {{ $stress_level }}% dari Kapasitas.</p>
+                            </div>
                         </div>
-                        <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider">Status Runway</h3>
-                    </div>
-                    <div class="relative z-10">
-                        <span class="text-4xl font-bold {{ $runway_color }}">{{ $runway_status }}</span>
-                        <p class="text-xs text-blue-200 mt-2 opacity-80">Load: {{ $stress_level }}% dari Kapasitas.</p>
-                    </div>
+
+                        <div class="w-[320px] shrink-0 bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group cursor-pointer">
+                            <div class="absolute -right-6 -bottom-6 bg-teal-500/20 w-32 h-32 rounded-full blur-3xl group-hover:bg-teal-500/30 transition"></div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 bg-teal-500/20 rounded-lg relative z-10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-teal-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                                </div>
+                                <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider relative z-10">Rata-rata Harian</h3>
+                            </div>
+                            <div class="relative z-10 flex items-baseline gap-2">
+                                <span class="text-5xl font-bold text-teal-400">{{ $rata_harian ?? 0 }}</span>
+                                <span class="text-sm font-light opacity-80">Flight / Hari</span>
+                            </div>
+                        </div>
+
+                        <div class="w-[320px] shrink-0 bg-[#1F3C88] text-white rounded-3xl p-8 shadow-xl hover:-translate-y-2 transition duration-300 relative overflow-hidden group cursor-pointer">
+                            <div class="absolute -left-6 -top-6 bg-amber-500/20 w-32 h-32 rounded-full blur-3xl group-hover:bg-amber-500/30 transition"></div>
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="p-2 bg-amber-500/20 rounded-lg relative z-10">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-amber-200" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                </div>
+                                <h3 class="text-blue-200 font-medium text-xs uppercase tracking-wider relative z-10">Hari Tersibuk</h3>
+                            </div>
+                            <div class="relative z-10 flex justify-between items-end">
+                                <div>
+                                    <span class="text-5xl font-bold text-amber-400">{{ $rekor_penerbangan ?? 0 }}</span>
+                                    <p class="text-xs text-blue-200 mt-2 opacity-80">Penerbangan</p>
+                                </div>
+                                <div class="text-right pb-1">
+                                    <span class="bg-amber-500 text-slate-900 font-bold px-3 py-1 rounded-full text-xs shadow-md">Tgl {{ $tanggal_rekor ?? '-' }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    @endfor
                 </div>
             </div>
         </div>
