@@ -1,4 +1,4 @@
-@props(['title', 'value', 'subValue' => null, 'icon' => null, 'iconColor' => 'text-indigo-600', 'iconBg' => 'bg-indigo-50', 'growth' => null, 'growthText' => null])
+@props(['title', 'value', 'subValue' => null, 'icon' => null, 'iconColor' => 'text-indigo-600', 'iconBg' => 'bg-indigo-50', 'growth' => null, 'growthText' => null, 'idVal' => null, 'idIcon' => null, 'idText' => null, 'idContainer' => null, 'idVs' => null])
 
 <!-- Neo-Glass KPI Card -->
 <div {{ $attributes->merge(['class' => 'glass-card rounded-[2rem] p-6 relative group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-lg']) }}>
@@ -20,7 +20,7 @@
             </div>
             
             <!-- Value -->
-            <div class="text-4xl font-extrabold text-[#1F3C88] mt-1 tracking-tight drop-shadow-sm font-outfit leading-tight">
+            <div {{ $idVal ? 'id=' . $idVal : '' }} class="text-4xl font-extrabold text-[#1F3C88] mt-1 tracking-tight drop-shadow-sm font-outfit leading-tight">
                 {{ $value }}
             </div>
         </div>
@@ -33,11 +33,12 @@
                         $isPositive = $growth >= 0; 
                         $color = $isPositive ? 'emerald' : 'rose';
                     @endphp
-                    <span class="bg-{{ $color }}-50/80 backdrop-blur text-{{ $color }}-600 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm border border-{{ $color }}-100 flex items-center gap-1 group-hover:bg-{{ $color }}-100 transition-colors">
-                        {{ $isPositive ? '▲' : '▼' }} {{ abs($growth) }}%
+                    <span {{ $idContainer ? 'id=' . $idContainer : '' }} class="bg-{{ $color }}-50/80 backdrop-blur text-{{ $color }}-600 text-xs px-2.5 py-1 rounded-full font-bold shadow-sm border border-{{ $color }}-100 flex items-center gap-1 group-hover:bg-{{ $color }}-100 transition-colors">
+                        <span {{ $idIcon ? 'id=' . $idIcon : '' }}>{!! $isPositive ? '▲' : '▼' !!}</span>
+                        <span {{ $idText ? 'id=' . $idText : '' }}>{{ abs($growth) }}%</span>
                     </span>
                     @if($growthText)
-                        <span class="text-[10px] text-slate-400 font-medium">{{ $growthText }}</span>
+                        <span {{ $idVs ? 'id=' . $idVs : '' }} class="text-[10px] text-slate-400 font-medium">{{ $growthText }}</span>
                     @endif
                 @elseif($subValue)
                      <span class="text-xs font-semibold text-slate-500 bg-slate-100/80 px-2 py-1 rounded-lg">

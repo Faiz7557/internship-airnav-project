@@ -105,7 +105,6 @@
                 <a href="{{ route('home') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Home</a>
                 <a href="{{ route('upload') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Upload</a>
                 <a href="{{ route('summary') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Summary</a>
-                <a href="{{ route('admin.events.index') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Admin</a>
                 <a href="{{ route('dashboard') }}" class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-[#1F3C88] shadow-md shadow-blue-900/5 ring-1 ring-black/5">Dashboard</a>
             </div>
         </div>
@@ -354,6 +353,10 @@
 
                     <x-slot name="action">
                         <div class="flex items-center gap-2">
+                             <button type="button" onclick="document.getElementById('addEventModal').classList.remove('hidden');" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-full shadow-sm transition flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                                Event
+                            </button>
                              <span class="hidden sm:inline-block bg-blue-100/80 backdrop-blur text-blue-800 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-blue-200">
                                 Max: {{ $busiestDay['count'] }}
                             </span>
@@ -406,11 +409,124 @@
             @endif
         </div>
 
-    <!-- 3. SECTION: Heatmap & Seasonal Analysis -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 animate-enter" style="animation-delay: 0.7s">
-        
-        <!-- Heatmap (Takes 2/3) -->
-        <div class="lg:col-span-2 glass-card p-6 rounded-[2rem] relative hover:shadow-lg transition-all duration-300 border border-white/60">
+    <!-- 3. SECTION: Pertumbuhan & Komparasi (YTD & MoM) -->
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4 animate-enter" style="animation-delay: 0.4s">
+        <h3 class="text-lg font-bold text-[#1F3C88] flex items-center gap-2 font-outfit">
+            <span class="p-1.5 bg-blue-50 rounded-lg text-blue-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </span>
+            Pertumbuhan & Komparasi
+        </h3>
+
+        <!-- Global Year & Compare Filters for KPIs -->
+        <div class="glass-card p-1 rounded-xl flex gap-1 border border-white/80 shadow-sm bg-white/50 backdrop-blur-md">
+            <div class="relative group">
+                <select id="globalYearSelect" class="appearance-none bg-transparent text-xs font-bold text-[#1F3C88] focus:outline-none cursor-pointer py-1.5 pl-3 pr-7 hover:text-blue-700 transition-colors">
+                    @foreach($availableDates as $y => $d)
+                        <option value="{{ $y }}" {{ ($year ?? 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                    @endforeach
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-blue-400 group-hover:text-blue-600 transition-colors">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+            <div class="w-px h-5 bg-slate-200/80 self-center"></div>
+            <div class="relative group">
+                <select id="globalCompareSelect" class="appearance-none bg-transparent text-xs font-bold text-slate-500 focus:outline-none cursor-pointer py-1.5 pl-3 pr-7 hover:text-indigo-600 transition-colors">
+                    <option value="">vs Year</option>
+                    @foreach($availableDates as $y => $d)
+                        @if($y != ($year ?? 2026))
+                            <option value="{{ $y }}">{{ $y }}</option>
+                        @endif
+                    @endforeach
+                </select>
+                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400 group-hover:text-indigo-400 transition-colors">
+                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10 animate-enter" style="animation-delay: 0.5s">
+        <!-- Card 1: Total Flights Growth (YTD) -->
+        <x-kpi-card 
+            title="Total Penerbangan (YTD)" 
+            value="{{ number_format($totalCurrentYear ?? 0) }}" 
+            iconBg="bg-blue-50" iconColor="text-blue-600"
+            growth="{{ $growthTotal ?? 0 }}"
+            growthText="vs {{ $prevYear ?? 'Prev' }}"
+            class="border border-white/60"
+            idVal="kpiTotalVal" idIcon="kpiTotalGrowthIcon" idText="kpiTotalGrowthText" idContainer="kpiTotalGrowthContainer" idVs="kpiTotalVs"
+        >
+            <x-slot name="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-4 4m4-4l4 4" /></svg>
+            </x-slot>
+        </x-kpi-card>
+
+        <!-- Card 2: Peak Day Traffic (YTD) -->
+        <x-kpi-card 
+            title="Puncak (YTD)" 
+            value="{{ number_format($peakDayCurrent ?? 0) }}" 
+            iconBg="bg-amber-50" iconColor="text-amber-600"
+            growth="{{ $growthPeak ?? 0 }}"
+            growthText="vs {{ $prevYear ?? 'Prev' }}"
+             class="border border-white/60"
+            idVal="kpiPeakVal" idIcon="kpiPeakGrowthIcon" idText="kpiPeakGrowthText" idContainer="kpiPeakGrowthContainer" idVs="kpiPeakVs"
+        >
+             <x-slot name="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            </x-slot>
+        </x-kpi-card>
+
+        <!-- Card 3: Avg Daily Traffic (YTD) -->
+        <x-kpi-card 
+            title="Avg Harian (YTD)" 
+            value="{{ number_format($avgCurrent ?? 0) }}" 
+            iconBg="bg-purple-50" iconColor="text-purple-600"
+            growth="{{ $growthAvg ?? 0 }}"
+            growthText="vs {{ $prevYear ?? 'Prev' }}"
+             class="border border-white/60"
+            idVal="kpiAvgVal" idIcon="kpiAvgGrowthIcon" idText="kpiAvgGrowthText" idContainer="kpiAvgGrowthContainer" idVs="kpiAvgVs"
+        >
+             <x-slot name="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </x-slot>
+        </x-kpi-card>
+
+        <!-- Card 4: Peak Hour (MoM) -->
+        <x-kpi-card 
+            title="Peak Jam (MoM)" 
+            value="{{ number_format($momStats['current_peak'] ?? 0) }}" 
+            iconBg="bg-cyan-50" iconColor="text-cyan-600"
+            growth="{{ $momStats['peak_growth'] ?? 0 }}"
+            growthText="vs Last Month"
+            class="border border-white/60"
+            idVal="kpiMomPeakVal" idIcon="kpiMomPeakGrowthIcon" idText="kpiMomPeakGrowthText" idContainer="kpiMomPeakGrowthContainer" idVs="kpiMomPeakVs"
+        >
+            <x-slot name="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+            </x-slot>
+        </x-kpi-card>
+
+        <!-- Card 5: Avg Daily (MoM) -->
+        <x-kpi-card 
+            title="Avg Harian (MoM)" 
+            value="{{ number_format($momStats['current_avg'] ?? 0) }}" 
+            iconBg="bg-teal-50" iconColor="text-teal-600"
+            growth="{{ $momStats['avg_growth'] ?? 0 }}"
+            growthText="vs Last Month"
+            class="border border-white/60"
+            idVal="kpiMomAvgVal" idIcon="kpiMomAvgGrowthIcon" idText="kpiMomAvgGrowthText" idContainer="kpiMomAvgGrowthContainer" idVs="kpiMomAvgVs"
+        >
+            <x-slot name="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+            </x-slot>
+        </x-kpi-card>
+    </div>
+
+    <!-- 4. SECTION: Heatmap & Seasonal Analysis -->
+    <div class="mb-10 animate-enter" style="animation-delay: 0.7s">
+        <!-- Heatmap (Full Width) -->
+        <div class="w-full glass-card p-6 rounded-[2rem] relative hover:shadow-lg transition-all duration-300 border border-white/60">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                 <h3 class="font-bold text-[#1F3C88] flex items-center gap-2 text-sm uppercase tracking-wider font-outfit">
                     <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -419,29 +535,16 @@
                     Heatmap Kesibukan
                 </h3>
                 
-                <div class="glass-card p-1 rounded-xl flex gap-1 border border-white/40">
-                     <div class="relative">
-                        <select id="heatmapYearSelect" class="bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer py-1.5 pl-3 pr-6 hover:text-indigo-600 transition-colors">
+                <!-- Single Year Filter for Heatmap -->
+                <div class="glass-card p-1 rounded-xl border border-white/80 shadow-sm bg-white/50 backdrop-blur-md">
+                     <div class="relative group">
+                        <select id="heatmapSingleYearSelect" class="appearance-none bg-transparent text-xs font-bold text-[#1F3C88] focus:outline-none cursor-pointer py-1.5 pl-3 pr-7 hover:text-indigo-600 transition-colors">
                             @foreach($availableDates as $y => $d)
                                 <option value="{{ $y }}" {{ ($year ?? 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
                             @endforeach
                         </select>
-                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400">
-                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
-                    <div class="w-px h-5 bg-slate-200 self-center"></div>
-                    <div class="relative">
-                         <select id="heatmapCompareSelect" class="bg-transparent text-xs font-bold text-slate-500 focus:outline-none cursor-pointer py-1.5 pl-3 pr-6 hover:text-indigo-600 transition-colors">
-                            <option value="">vs Year</option>
-                            @foreach($availableDates as $y => $d)
-                                @if($y != ($year ?? 2026))
-                                    <option value="{{ $y }}">{{ $y }}</option>
-                                @endif
-                            @endforeach
-                        </select>
-                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400">
-                            <svg class="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-blue-400 group-hover:text-indigo-400 transition-colors">
+                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
                         </div>
                     </div>
                 </div>
@@ -466,86 +569,6 @@
                 <span>Sibuk</span>
             </div>
         </div>
-
-        <!-- Month-over-Month Comparison Cards -->
-        <div class="flex flex-col gap-6">
-            <!-- Comparation Card 1 -->
-            <x-kpi-card 
-                title="Peak Hour (vs Last Month)" 
-                value="{{ number_format($momStats['current_peak'] ?? 0) }}" 
-                iconBg="bg-cyan-50" iconColor="text-cyan-600"
-                growth="{{ $momStats['peak_growth'] ?? 0 }}"
-                growthText="MoM Growth"
-            >
-                <x-slot name="icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-                </x-slot>
-            </x-kpi-card>
-
-            <!-- Comparation Card 2 -->
-            <x-kpi-card 
-                title="Avg Daily (vs Last Month)" 
-                value="{{ number_format($momStats['current_avg'] ?? 0) }}" 
-                iconBg="bg-teal-50" iconColor="text-teal-600"
-                growth="{{ $momStats['avg_growth'] ?? 0 }}"
-                growthText="MoM Growth"
-            >
-                <x-slot name="icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-                </x-slot>
-            </x-kpi-card>
-        </div>
-    </div>
-
-    <!-- 4. SECTION: Seasonal/Yearly Growth Analysis -->
-    <h3 class="text-lg font-bold text-[#1F3C88] mb-4 flex items-center gap-2 font-outfit">
-        <span class="p-1.5 bg-blue-50 rounded-lg text-blue-600">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-        </span>
-        Pertumbuhan Tahunan (YTD)
-    </h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 animate-enter" style="animation-delay: 0.4s">
-        <!-- Card 1: Total Flights Growth -->
-        <x-kpi-card 
-            title="Total Penerbangan" 
-            value="{{ number_format($totalCurrentYear ?? 0) }}" 
-            iconBg="bg-blue-50" iconColor="text-blue-600"
-            growth="{{ $growthTotal ?? 0 }}"
-            growthText="vs {{ $prevYear ?? 'Prev' }}"
-            class="border border-white/60"
-        >
-            <x-slot name="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-4 4m4-4l4 4" /></svg>
-            </x-slot>
-        </x-kpi-card>
-
-        <!-- Card 2: Peak Day Traffic -->
-        <x-kpi-card 
-            title="Puncak Tertinggi" 
-            value="{{ number_format($peakDayCurrent ?? 0) }}" 
-            iconBg="bg-amber-50" iconColor="text-amber-600"
-            growth="{{ $growthPeak ?? 0 }}"
-            growthText="vs {{ $prevYear ?? 'Prev' }}"
-             class="border border-white/60"
-        >
-             <x-slot name="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-            </x-slot>
-        </x-kpi-card>
-
-        <!-- Card 3: Avg Daily Traffic -->
-        <x-kpi-card 
-            title="Rata-rata Harian" 
-            value="{{ number_format($avgCurrent ?? 0) }}" 
-            iconBg="bg-purple-50" iconColor="text-purple-600"
-            growth="{{ $growthAvg ?? 0 }}"
-            growthText="vs {{ $prevYear ?? 'Prev' }}"
-             class="border border-white/60"
-        >
-             <x-slot name="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
-            </x-slot>
-        </x-kpi-card>
     </div>
 
     <!-- Footer Note -->
@@ -780,7 +803,14 @@
                     </div>
                     
                     <!-- Footer -->
-                     <div class="bg-slate-50/50 px-6 py-4 border-t border-slate-100 flex justify-end">
+                     <div class="bg-slate-50/50 px-6 py-4 border-t border-slate-100 flex justify-between items-center">
+                        <form id="deleteEventForm" method="POST" action="" class="hidden m-0">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="px-4 py-2 text-rose-500 font-bold text-sm rounded-xl hover:bg-rose-100 transition shadow-sm border border-rose-200" onclick="return confirm('Hapus event ini?');">
+                                Hapus
+                            </button>
+                        </form>
                         <button type="button" id="closeEventModalBtnText" class="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold text-sm rounded-xl hover:bg-slate-50 hover:text-[#1F3C88] shadow-sm transition">
                             Tutup
                         </button>
@@ -791,6 +821,55 @@
     </div>
 
 
+
+    <!-- Add Event Modal -->
+    <div id="addEventModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('addEventModal').classList.add('hidden');"></div>
+        <div class="fixed inset-0 z-10 flex items-center justify-center p-4">
+            <div class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-2xl w-full max-w-md transform transition-all border border-white/60">
+                <div class="bg-gradient-to-r from-slate-50 to-white px-6 py-5 border-b border-slate-100 flex justify-between items-center rounded-t-[2rem]">
+                    <h3 class="text-xl font-bold text-[#1F3C88] font-outfit">Tambah Event Baru</h3>
+                    <button type="button" onclick="document.getElementById('addEventModal').classList.add('hidden');" class="bg-slate-100 p-2 rounded-full text-slate-400 hover:bg-rose-100 hover:text-rose-500 transition-colors">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+                <form action="{{ route('dashboard.events.store') }}" method="POST" class="px-6 py-6">
+                    @csrf
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Nama Event</label>
+                            <input type="text" name="name" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Contoh: Nataru 2026">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Tanggal Mulai</label>
+                                <input type="date" name="start_date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1">Tanggal Selesai</label>
+                                <input type="date" name="end_date" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Warna Highlight</label>
+                            <div class="flex items-center gap-3">
+                                <input type="color" name="color" value="#10b981" required class="h-10 w-14 rounded cursor-pointer border-0 bg-transparent p-0">
+                                <span class="text-xs text-slate-400">Pilih warna untuk grafik</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 mb-1">Deskripsi Tambahan</label>
+                            <textarea name="description" rows="2" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition" placeholder="Opsional..."></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-8 flex justify-end gap-3">
+                        <button type="button" onclick="document.getElementById('addEventModal').classList.add('hidden');" class="px-5 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-50 rounded-xl transition">Batal</button>
+                        <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md shadow-indigo-600/20 transition">Simpan Event</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- Consolidated Chart Scripts -->
     <!-- External Libraries (Local) -->

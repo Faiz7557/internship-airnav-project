@@ -24,5 +24,6 @@ Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
 Route::get('/summary/data', [SummaryController::class, 'getData'])->name('summary.data');
 Route::post('/summary/export', [SummaryController::class, 'exportExcel'])->name('summary.export');
 
-Route::resource('admin/events', EventController::class)->names('admin.events');
+Route::post('/dashboard/events', [EventController::class, 'store'])->name('dashboard.events.store');
+Route::delete('/dashboard/events/{event}', [EventController::class, 'destroy'])->name('dashboard.events.destroy');
 Route::post('/summary/export-pdf', [App\Http\Controllers\SummaryController::class, 'exportPDF'])->name('summary.export_pdf');

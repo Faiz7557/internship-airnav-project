@@ -45,30 +45,13 @@ class DashboardController extends Controller
             ? Carbon::parse($minDate)->format('d M Y') . ' - ' . Carbon::parse($maxDate)->format('d M Y') 
             : '-';
 
-        // --- DEFINE SEASONAL EVENTS (Mockup for Demo) ---
-        // In a real app, this would come from an 'events' table
-        // --- DEFINE SEASONAL EVENTS (Dynamic Calculation) ---
-        $rawEvents = [
-            // 2023
-            ['name' => 'Angkutan Lebaran 2023', 'start' => '2023-04-14', 'end' => '2023-05-02', 'color' => '#10b981'], // ~H-8 to H+7 (Idul Fitri ~Apr 22)
-            ['name' => 'Angkutan Nataru 2023/24', 'start' => '2023-12-19', 'end' => '2024-01-04', 'color' => '#f43f5e'],
-            
-            // 2024
-            ['name' => 'Angkutan Lebaran 2024', 'start' => '2024-04-03', 'end' => '2024-04-18', 'color' => '#10b981'], // ~H-7 to H+7 (Idul Fitri ~Apr 10)
-            ['name' => 'Angkutan Nataru 2024/25', 'start' => '2024-12-19', 'end' => '2025-01-04', 'color' => '#f43f5e'],
-
-            // 2025 (Projected)
-            ['name' => 'Angkutan Lebaran 2025', 'start' => '2025-03-24', 'end' => '2025-04-08', 'color' => '#10b981'], // Idul Fitri ~Mar 31
-            ['name' => 'Angkutan Nataru 2025/26', 'start' => '2025-12-19', 'end' => '2026-01-04', 'color' => '#f43f5e'],
-
-             // 2026 (Projected)
-            ['name' => 'Angkutan Lebaran 2026', 'start' => '2026-03-13', 'end' => '2026-03-28', 'color' => '#10b981'] // Idul Fitri ~Mar 20
-        ];
+        // --- PULL EVENTS FROM DATABASE ---
+        $rawEvents = \App\Models\Event::all();
 
         $events = [];
         foreach ($rawEvents as $ev) {
             // Calculate Stats for each event
-            $stats = DailyFlightStat::whereBetween('date', [$ev['start'], $ev['end']])->get();
+            $stats = DailyFlightStat::whereBetween('date', [$ev->start_date, $ev->end_date])->get();
             
             if ($stats->count() > 0) {
                 // Calculation Logic
@@ -79,11 +62,12 @@ class DashboardController extends Controller
                 $peakDate = $peakNode ? Carbon::parse($peakNode->date)->format('d M Y') : '-';
 
                 $events[] = [
-                    'name' => $ev['name'],
-                    'start' => $ev['start'],
-                    'end' => $ev['end'],
-                    'color' => $ev['color'] . '1A', // 10% opacity for background
-                    'borderColor' => $ev['color'] . '66', // 40% opacity for border
+                    'id' => $ev->id,
+                    'name' => $ev->name,
+                    'start' => Carbon::parse($ev->start_date)->format('Y-m-d'),
+                    'end' => Carbon::parse($ev->end_date)->format('Y-m-d'),
+                    'color' => $ev->color . '1A', // 10% opacity for background
+                    'borderColor' => $ev->color . '66', // 40% opacity for border
                     
                     // Pre-calculated Data for Modal
                     'total' => number_format($totalVal),
@@ -190,14 +174,17 @@ class DashboardController extends Controller
             $years = $dailyStats->groupBy(fn($d) => Carbon::parse($d->date)->year);
             
             foreach ($years as $y => $yearData) {
-                // Initialize 12 months with 0
-                $monthlyData = array_fill(1, 12, 0);
-                
+                // Initialize array of objects {x, y}. x = 1..366 (day of year)
+                $dayData = [];
                 foreach ($yearData as $stat) {
-                    $m = Carbon::parse($stat->date)->month;
-                    $monthlyData[$m] += $stat->total_flights;
+                    $dateObj = Carbon::parse($stat->date);
+                    $dayOfYear = $dateObj->dayOfYear;
+                    $dayData[] = [
+                        'x' => $dayOfYear,
+                        'y' => $stat->total_flights
+                    ];
                 }
-                $yearlyComparisonRaw[$y] = array_values($monthlyData);
+                $yearlyComparisonRaw[$y] = $dayData;
             }
             // Bug 6 Fix: Only show when >=2 years of data exist
             $yearlyComparison = count($yearlyComparisonRaw) >= 2 ? $yearlyComparisonRaw : null;
@@ -337,13 +324,14 @@ class DashboardController extends Controller
 
         // 10. HEATMAP DATA (Full History for Client-Side Filtering)
         // Fetch all daily stats to allow dynamic year switching on frontend
-        $heatmapData = DailyFlightStat::select('date', 'total_flights')
+        $heatmapData = DailyFlightStat::select('date', 'total_flights', 'peak_hour_count')
             ->orderBy('date')
             ->get()
             ->map(function($item) {
                 return [
                     'date' => $item->date, // YYYY-MM-DD
                     'value' => $item->total_flights,
+                    'peak' => $item->peak_hour_count ?? 0,
                     'year' => Carbon::parse($item->date)->year, // Helper for JS filtering
                     'month' => Carbon::parse($item->date)->month // Helper for JS filtering
                 ];

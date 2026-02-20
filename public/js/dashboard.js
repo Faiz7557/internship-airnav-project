@@ -168,7 +168,16 @@ document.addEventListener("DOMContentLoaded", function () {
             if (elPeakVal) elPeakVal.innerText = maxVal;
 
             const modal = document.getElementById('eventDetailModal');
-            if (modal) modal.classList.remove('hidden');
+            if (modal) {
+                const deleteForm = document.getElementById('deleteEventForm');
+                if (deleteForm && event.id) {
+                    deleteForm.action = `/dashboard/events/${event.id}`;
+                    deleteForm.classList.remove('hidden');
+                } else if (deleteForm) {
+                    deleteForm.classList.add('hidden');
+                }
+                modal.classList.remove('hidden');
+            }
         };
 
         const closeEventModal = () => {
@@ -653,40 +662,194 @@ document.addEventListener("DOMContentLoaded", function () {
     if (closeModalBtns) closeModalBtns.forEach(btn => { if (btn) btn.addEventListener('click', closeModal); });
     if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
 
-    // --- Yearly Comparison Chart ---
+    // --- Yearly Comparison Chart (Aggregated/Zoomable) ---
     if (data.yearlyComparison) {
         const ctxYearly = document.getElementById('yearlyChart');
         if (ctxYearly) {
-            const yearlyData = data.yearlyComparison;
+            // Add Zoom & Pan Controls next to title
+            const chartCardHeader = ctxYearly.closest('.glass-card').querySelector('h3').parentElement;
+            if (!document.getElementById('zoomControls')) {
+                const controlsHtml = `
+                    <div id="zoomControls" class="flex items-center gap-1.5 ml-auto bg-white/80 backdrop-blur-sm p-1.5 rounded-2xl border border-slate-200/60 shadow-sm">
+                        <div class="flex gap-1">
+                            <button id="panLeftBtn" class="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-50 text-slate-500 hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-sm border border-slate-200 hover:border-indigo-200 hover:shadow-indigo-100" title="Geser Kiri">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <button id="panRightBtn" class="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-50 text-slate-500 hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-sm border border-slate-200 hover:border-indigo-200 hover:shadow-indigo-100" title="Geser Kanan">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+                        <div class="w-px h-5 bg-slate-200 self-center mx-1"></div>
+                        <div class="flex gap-1">
+                            <button id="zoomOutBtn" class="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-50 text-slate-500 hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-sm border border-slate-200 hover:border-indigo-200 hover:shadow-indigo-100" title="Zoom Out">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" /></svg>
+                            </button>
+                            <button id="zoomInBtn" class="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-50 text-slate-500 hover:bg-white hover:text-indigo-600 transition-all duration-300 shadow-sm border border-slate-200 hover:border-indigo-200 hover:shadow-indigo-100" title="Zoom In">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+                            </button>
+                        </div>
+                        <button id="resetZoomBtn" class="hidden flex items-center justify-center px-3 h-7 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-[10px] uppercase tracking-wider hover:bg-indigo-600 hover:text-white transition-all duration-300 shadow-sm border border-indigo-200 hover:border-indigo-600 ml-1 group" title="Reset Default">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1.5 text-indigo-500 group-hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                            Reset
+                        </button>
+                    </div>`;
+                chartCardHeader.insertAdjacentHTML('beforeend', controlsHtml);
+            }
+            const resetBtn = document.getElementById('resetZoomBtn');
+            const zoomInBtn = document.getElementById('zoomInBtn');
+            const zoomOutBtn = document.getElementById('zoomOutBtn');
+            const panLeftBtn = document.getElementById('panLeftBtn');
+            const panRightBtn = document.getElementById('panRightBtn');
+
+            const yearlyData = data.yearlyComparison; // format: { '2023': [{x: 1, y: 100}, {x:2, y:120}...], '2024': ... }
             const colors = { '2023': '#cbd5e1', '2024': '#94a3b8', '2025': COLOR_SECONDARY, '2026': COLOR_PRIMARY };
 
-            const datasets = Object.keys(yearlyData).map(year => ({
-                label: year,
-                data: yearlyData[year],
-                borderColor: colors[year] || '#ef4444',
-                borderWidth: year === '2026' ? 4 : 2,
-                borderDash: year === '2026' || year === '2025' ? [] : [5, 5],
-                pointRadius: year === '2026' ? 4 : 0,
-                tension: 0.4,
-                datalabels: {
-                    display: year === '2026' ? 'auto' : false,
-                    align: 'top',
-                    anchor: 'start',
-                    color: colors[year] || '#ef4444'
-                }
-            }));
+            const datasets = Object.keys(yearlyData).map(year => {
+                // To make the line smooth but not crazy, we apply a moving average
+                const rawData = yearlyData[year];
+                // simple 7-day moving average to smooth the violent daily spikes when fully zoomed out
+                const smoothedData = rawData.map((pt, idx, arr) => {
+                    let sum = 0; let count = 0;
+                    for (let i = Math.max(0, idx - 3); i <= Math.min(arr.length - 1, idx + 3); i++) {
+                        sum += arr[i].y; count++;
+                    }
+                    return { x: pt.x, y: sum / count, rawY: pt.y };
+                });
 
-            new Chart(ctxYearly.getContext('2d'), {
+                return {
+                    label: year,
+                    data: smoothedData,
+                    borderColor: colors[year] || '#ef4444',
+                    borderWidth: year === '2026' ? 3 : 2,
+                    borderDash: year === '2026' || year === '2025' ? [] : [4, 4],
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    tension: 0.3,
+                    parsing: { xAxisKey: 'x', yAxisKey: 'y' }
+                };
+            });
+
+            // Helper to get Date string from day of year
+            const getDateFromDayOfYear = (day) => {
+                const leapYear = new Date().getFullYear(); // Use current year just for label mapping
+                const d = new Date(leapYear, 0); // Jan 1
+                d.setDate(day); // Sets the day of the year
+                return d;
+            };
+
+            const yearlyChartInstance = new Chart(ctxYearly.getContext('2d'), {
                 type: 'line',
-                data: {
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: datasets
-                },
-                options: withDataLabels({
+                data: { datasets: datasets },
+                options: {
                     ...commonOptions,
-                    plugins: { ...commonOptions.plugins, legend: { position: 'top', align: 'end' } },
-                    interaction: { mode: 'index', intersect: false }
-                })
+                    plugins: {
+                        ...commonOptions.plugins,
+                        legend: { position: 'top', align: 'end' },
+                        zoom: {
+                            limits: {
+                                x: { min: 1, max: 366 }
+                            },
+                            pan: {
+                                enabled: false,
+                                mode: 'x',
+                                onPanComplete({ chart }) {
+                                    const min = chart.scales.x.min;
+                                    const max = chart.scales.x.max;
+                                    if (max - min < 360) resetBtn.classList.remove('hidden');
+                                    else resetBtn.classList.add('hidden');
+                                }
+                            },
+                            zoom: {
+                                wheel: { enabled: false },
+                                pinch: { enabled: false },
+                                mode: 'x',
+                                onZoomComplete({ chart }) {
+                                    const min = chart.scales.x.min;
+                                    const max = chart.scales.x.max;
+                                    // if zoomed in, show reset button
+                                    if (max - min < 360) resetBtn.classList.remove('hidden');
+                                    else resetBtn.classList.add('hidden');
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: (context) => {
+                                    const dayNum = context[0].parsed.x;
+                                    const dateObj = getDateFromDayOfYear(dayNum);
+                                    return dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long' });
+                                },
+                                label: (c) => {
+                                    const rawTarget = c.raw.rawY; // the original non-smoothed data
+                                    return ` ${c.dataset.label}: ${Math.round(rawTarget).toLocaleString()}`;
+                                }
+                            }
+                        }
+                    },
+                    interaction: { mode: 'index', intersect: false },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(226, 232, 240, 0.6)', borderDash: [4, 4] },
+                            border: { display: false }
+                        },
+                        x: {
+                            type: 'linear',
+                            min: 1,
+                            max: 366,
+                            bounds: 'ticks',
+                            grid: { display: false },
+                            border: { display: false },
+                            afterBuildTicks: function (axis) {
+                                const range = axis.max - axis.min;
+                                if (range > 180) {
+                                    const monthStartDays = [1, 32, 61, 92, 122, 153, 183, 214, 245, 275, 306, 336];
+                                    axis.ticks = monthStartDays.filter(d => d >= axis.min && d <= axis.max).map(d => ({ value: d }));
+                                }
+                            },
+                            ticks: {
+                                callback: function (value, index, ticks) {
+                                    if (value < 1 || value > 366) return null;
+                                    const range = this.max - this.min;
+                                    const d = getDateFromDayOfYear(value);
+
+                                    if (range > 180) {
+                                        return d.toLocaleDateString('id-ID', { month: 'short' });
+                                    } else {
+                                        return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                                    }
+                                },
+                                maxRotation: 0,
+                                autoSkip: false,
+                                maxTicksLimit: 12
+                            }
+                        }
+                    }
+                }
+            });
+
+            resetBtn.addEventListener('click', () => {
+                yearlyChartInstance.resetZoom();
+                resetBtn.classList.add('hidden');
+            });
+            zoomInBtn.addEventListener('click', () => {
+                yearlyChartInstance.zoom(1.2);
+                const min = yearlyChartInstance.scales.x.min;
+                const max = yearlyChartInstance.scales.x.max;
+                if (max - min < 360) resetBtn.classList.remove('hidden');
+            });
+            zoomOutBtn.addEventListener('click', () => {
+                yearlyChartInstance.zoom(0.8);
+                const min = yearlyChartInstance.scales.x.min;
+                const max = yearlyChartInstance.scales.x.max;
+                if (max - min >= 360) resetBtn.classList.add('hidden');
+                else resetBtn.classList.remove('hidden');
+            });
+            panLeftBtn.addEventListener('click', () => {
+                yearlyChartInstance.pan({ x: 50 });
+            });
+            panRightBtn.addEventListener('click', () => {
+                yearlyChartInstance.pan({ x: -50 });
             });
         }
     }
@@ -737,7 +900,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (elText) elText.innerText = Math.abs(growth) + '%';
 
             const elVs = document.getElementById(idVs);
-            if (elVs) elVs.innerText = 'vs ' + prevYearLbl;
+            if (elVs) {
+                // If it's a MoM card, the label might already contain 'vs', so we can just use the provided text
+                elVs.innerText = prevYearLbl.toString().startsWith('vs') ? prevYearLbl : 'vs ' + prevYearLbl;
+            }
 
             const container = document.getElementById(idContainer);
             const iconSpan = document.getElementById(idIcon);
@@ -753,14 +919,59 @@ document.addEventListener("DOMContentLoaded", function () {
         updateCard('kpiTotalVal', 'kpiTotalGrowthIcon', 'kpiTotalGrowthText', 'kpiTotalGrowthContainer', 'kpiTotalVs', currStats.total, totalGrowth, prevYear);
         updateCard('kpiPeakVal', 'kpiPeakGrowthIcon', 'kpiPeakGrowthText', 'kpiPeakGrowthContainer', 'kpiPeakVs', currStats.peak, peakGrowth, prevYear);
         updateCard('kpiAvgVal', 'kpiAvgGrowthIcon', 'kpiAvgGrowthText', 'kpiAvgGrowthContainer', 'kpiAvgVs', currStats.avg, avgGrowth, prevYear);
+
+        // MoM calculations
+        let currMonthData = [];
+        let prevMonthData = [];
+        let momSubtitle = 'vs Last Month';
+
+        if (currData.length > 0 && maxDateStr !== "0000-00-00") {
+            const maxD = new Date(maxDateStr);
+            const maxMonth = maxD.getMonth() + 1; // 1-12
+            const maxYear = maxD.getFullYear();
+
+            let prevMonth = maxMonth - 1;
+            let prevMonthYear = maxYear;
+            if (prevMonth === 0) {
+                prevMonth = 12;
+                prevMonthYear = maxYear - 1;
+            }
+
+            currMonthData = allData.filter(d => d.year == maxYear && d.month == maxMonth);
+            prevMonthData = allData.filter(d => d.year == prevMonthYear && d.month == prevMonth);
+
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+            momSubtitle = `vs ${monthNames[prevMonth - 1]} ${prevMonthYear !== maxYear ? prevMonthYear : ''}`;
+        }
+
+        const calcMomStats = (arr) => {
+            if (arr.length === 0) return { peakHour: 0, avgDaily: 0 };
+            const peakHour = Math.max(...arr.map(d => d.peak || 0));
+            const avgDaily = Math.round(arr.reduce((a, b) => a + b.value, 0) / arr.length);
+            return { peakHour, avgDaily };
+        };
+
+        const currMom = calcMomStats(currMonthData);
+        const prevMom = calcMomStats(prevMonthData);
+
+        const peakHourGrowth = calcGrowth(currMom.peakHour, prevMom.peakHour);
+        const avgDailyGrowth = calcGrowth(currMom.avgDaily, prevMom.avgDaily);
+
+        updateCard('kpiMomPeakVal', 'kpiMomPeakGrowthIcon', 'kpiMomPeakGrowthText', 'kpiMomPeakGrowthContainer', 'kpiMomPeakVs', currMom.peakHour, peakHourGrowth, momSubtitle);
+        updateCard('kpiMomAvgVal', 'kpiMomAvgGrowthIcon', 'kpiMomAvgGrowthText', 'kpiMomAvgGrowthContainer', 'kpiMomAvgVs', currMom.avgDaily, avgDailyGrowth, momSubtitle);
     };
 
     // --- 4. CALENDAR HEATMAP RENDERER (Dynamic) ---
     const renderHeatmap = (targetYear, mode = 'year') => {
         const container = document.getElementById('calendarHeatmap');
         const monthContainer = document.getElementById('monthGridContainer');
-        const compareSelect = document.getElementById('heatmapCompareSelect');
-        const compareYear = compareSelect ? compareSelect.value : (targetYear - 1);
+
+        // Heatmap only uses its single year filter now, but KPI stats 
+        // will rely on the global selections.
+        const globalYearSelect = document.getElementById('globalYearSelect');
+        const globalCompareSelect = document.getElementById('globalCompareSelect');
+        const compareYear = globalCompareSelect && globalCompareSelect.value ? globalCompareSelect.value : ((globalYearSelect ? globalYearSelect.value : targetYear) - 1);
+        const kpiTargetYear = globalYearSelect ? globalYearSelect.value : targetYear;
 
         if (!container) return;
 
@@ -787,57 +998,58 @@ document.addEventListener("DOMContentLoaded", function () {
             return 'bg-[#1F3C88]';
         };
 
-        updateSeasonalStats(targetYear, compareYear, allData);
+        // Update KPI Stats based on the Global Filters independently of Heatmap Target Year
+        updateSeasonalStats(kpiTargetYear, compareYear, allData);
 
         if (mode === 'year') {
-            const startDate = new Date(targetYear, 0, 1);
-            const endDate = new Date(targetYear, 11, 31);
-
             container.innerHTML = '';
-            container.style.display = 'flex';
-            container.style.gap = '4px';
-
-            let currentDate = new Date(startDate);
-            let weeks = [];
-            let currentWeek = [];
-
-            const startDay = startDate.getDay();
-            for (let i = 0; i < startDay; i++) currentWeek.push(null);
-
-            while (currentDate <= endDate) {
-                currentWeek.push(new Date(currentDate));
-                if (currentWeek.length === 7) {
-                    weeks.push(currentWeek);
-                    currentWeek = [];
-                }
-                currentDate.setDate(currentDate.getDate() + 1);
-            }
-            if (currentWeek.length > 0) {
-                while (currentWeek.length < 7) currentWeek.push(null);
-                weeks.push(currentWeek);
-            }
+            // Make the outer container a responsive grid
+            container.className = 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6 gap-6 place-items-center w-full';
+            // Also reset explicit inline styles applied previously if any
+            container.style.display = '';
+            container.style.gap = '';
 
             let html = '';
-            weeks.forEach(week => {
-                html += `<div class="flex flex-col gap-1">`;
-                week.forEach(dateObj => {
-                    if (!dateObj) {
-                        html += `<div class="w-3 h-3 rounded-[2px] bg-transparent"></div>`;
-                    } else {
-                        const y = dateObj.getFullYear();
-                        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-                        const d = String(dateObj.getDate()).padStart(2, '0');
-                        const dateKey = `${y}-${m}-${d}`;
-                        const val = dataMap[dateKey] || 0;
+            const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
 
-                        html += `<div class="w-3 h-3 rounded-[2px] ${getColor(val)} transition-all hover:ring-2 hover:ring-offset-1 hover:ring-indigo-400 cursor-pointer group/cell relative"
-                                        onmouseenter="showHeatmapTooltip(event, '${dateKey}', ${val})"
-                                        onmousemove="moveHeatmapTooltip(event)"
-                                        onmouseleave="hideHeatmapTooltip()"></div>`;
-                    }
+            for (let m = 0; m < 12; m++) {
+                const mStart = new Date(targetYear, m, 1);
+                const mEnd = new Date(targetYear, m + 1, 0);
+
+                html += `<div class="flex flex-col gap-2 items-center w-full max-w-[200px]">`;
+                html += `<span class="text-[11px] font-bold text-slate-400 uppercase tracking-widest">${monthsNames[m]}</span>`;
+                html += `<div class="grid grid-cols-7 gap-[3px] bg-white p-3 rounded-xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow w-full">`;
+
+                // Header for days of week (Senin - Minggu)
+                ['S', 'S', 'R', 'K', 'J', 'S', 'M'].forEach(d => {
+                    html += `<div class="text-[8px] sm:text-[9px] text-center text-slate-300 font-bold mb-1">${d}</div>`;
                 });
-                html += `</div>`;
-            });
+
+                // Pad start of first week based on day of week (Mon=0 .. Sun=6 for Indonesian standard)
+                const startDay = mStart.getDay();
+                const padDays = startDay === 0 ? 6 : startDay - 1;
+
+                for (let i = 0; i < padDays; i++) {
+                    html += `<div class="w-full pt-[100%] rounded-sm bg-transparent relative"></div>`;
+                }
+
+                for (let d = 1; d <= mEnd.getDate(); d++) {
+                    const y = targetYear;
+                    const mo = String(m + 1).padStart(2, '0');
+                    const dayStr = String(d).padStart(2, '0');
+                    const dateKey = `${y}-${mo}-${dayStr}`;
+                    const val = dataMap[dateKey] || 0;
+
+                    html += `<div class="w-full pt-[100%] rounded-[3px] sm:rounded-md ${getColor(val)} transition-all hover:scale-125 hover:z-10 hover:shadow-md cursor-pointer relative group"
+                                    onmouseenter="showHeatmapTooltip(event, '${dateKey}', ${val})"
+                                    onmousemove="moveHeatmapTooltip(event)"
+                                    onmouseleave="hideHeatmapTooltip()">
+                                    <div class="absolute inset-0"></div>    
+                            </div>`;
+                }
+
+                html += `</div></div>`;
+            }
             container.innerHTML = html;
         }
 
@@ -919,7 +1131,8 @@ document.addEventListener("DOMContentLoaded", function () {
         const mBtn = document.getElementById('btnViewMonth');
         const yView = document.getElementById('heatmapYearView');
         const mView = document.getElementById('heatmapMonthView');
-        const currentYear = document.getElementById('heatmapYearSelect').value;
+        const hmSelect = document.getElementById('heatmapSingleYearSelect');
+        const currentYear = hmSelect ? hmSelect.value : new Date().getFullYear();
 
         const activeClasses = ['bg-white', 'text-indigo-600', 'shadow-sm'];
         const inactiveClasses = ['text-slate-500', 'hover:text-slate-700', 'hover:bg-white/50'];
@@ -947,25 +1160,37 @@ document.addEventListener("DOMContentLoaded", function () {
         renderHeatmap(currentYear, mode);
     };
 
-    const heatmapYearSelect = document.getElementById('heatmapYearSelect');
-    if (heatmapYearSelect) {
-        heatmapYearSelect.addEventListener('change', (e) => {
-            const mode = !document.getElementById('heatmapYearView').classList.contains('hidden') ? 'year' : 'month';
-            renderHeatmap(e.target.value, mode);
+    // --- EVENT LISTENERS FOR FILTERS ---
+    const heatmapSingleSelect = document.getElementById('heatmapSingleYearSelect');
+    if (heatmapSingleSelect) {
+        heatmapSingleSelect.addEventListener('change', (e) => {
+            renderHeatmap(e.target.value, 'year');
         });
     }
 
-    const compareSel = document.getElementById('heatmapCompareSelect');
-    if (compareSel) {
-        compareSel.addEventListener('change', (e) => {
-            const currentYear = document.getElementById('heatmapYearSelect').value;
-            const mode = !document.getElementById('heatmapYearView').classList.contains('hidden') ? 'year' : 'month';
-            renderHeatmap(currentYear, mode);
-        });
+    const globalYearSelect = document.getElementById('globalYearSelect');
+    const globalCompareSelect = document.getElementById('globalCompareSelect');
+
+    const updateGlobalKPIs = () => {
+        if (globalYearSelect) {
+            // Trigger renderHeatmap to recalculate stats quietly or call updateSeasonalStats directly
+            // In this architecture, calling renderHeatmap with Heatmap's current year will trigger KPI updates 
+            // since we modified renderHeatmap to look at the global selects.
+            const hmYear = heatmapSingleSelect ? heatmapSingleSelect.value : new Date().getFullYear();
+            renderHeatmap(hmYear, 'year');
+        }
+    };
+
+    if (globalYearSelect) {
+        globalYearSelect.addEventListener('change', updateGlobalKPIs);
+    }
+    if (globalCompareSelect) {
+        globalCompareSelect.addEventListener('change', updateGlobalKPIs);
     }
 
     // Initial Render
-    if (heatmapYearSelect) {
-        renderHeatmap(heatmapYearSelect.value, 'year');
-    }
+    // Since the Heatmap toggle button isn't needed anymore, let's just make sure
+    // renderHeatmap kicks off correctly based on globalYearSelect's initially selected option
+    const initHmYear = heatmapSingleSelect ? heatmapSingleSelect.value : new Date().getFullYear();
+    renderHeatmap(initHmYear, 'year');
 });
