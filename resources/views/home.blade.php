@@ -148,7 +148,7 @@
                             </div>
                             <div class="flex items-baseline gap-2">
                                 <span class="text-5xl font-bold text-red-400">{{ $jam_sibuk }}</span>
-                                <span class="text-base font-light opacity-80">WIB</span>
+                                <span class="text-base font-light opacity-80">UTC</span>
                             </div>
                         </div>
 
