@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\DailyFlightStat;
-use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -17,14 +16,26 @@ class HomeController extends Controller
         
         if (!$latestData) {
             return view('home', [
-                'total' => 0, 'growth' => 0, 'dom_pct' => 0, 'int_pct' => 0, 
-                'jam_sibuk' => '-', 'runway_status' => 'No Data', 'runway_color' => 'text-gray-400', 'stress_level' => 0
+                'total' => 0, 
+                'growth' => 0, 
+                'dom_pct' => 0, 
+                'int_pct' => 0, 
+                'jam_sibuk' => '-', 
+                'runway_status' => 'No Data', 
+                'runway_color' => 'text-gray-400', 
+                'stress_level' => 0,
+                'nama_bulan' => $today->translatedFormat('F Y'),
+                'rata_harian' => 0,
+                'rekor_penerbangan' => 0,
+                'tanggal_rekor' => '-'
             ]);
         }
 
         $referenceDate = Carbon::parse($latestData);
         $currentMonth = $referenceDate->month;
         $currentYear = $referenceDate->year;
+
+        $namaBulanIni = $referenceDate->translatedFormat('F Y');
 
         $prevDate = $referenceDate->copy()->subMonth(); 
         $prevMonth = $prevDate->month;
@@ -72,6 +83,15 @@ class HomeController extends Controller
         $daysCount = DailyFlightStat::whereMonth('date', $currentMonth)
                                     ->whereYear('date', $currentYear)
                                     ->count();
+
+        $rataHarian = ($daysCount > 0) ? round($currentTotal / $daysCount) : 0;
+        $busiestDay = DailyFlightStat::whereMonth('date', $currentMonth)
+                                     ->whereYear('date', $currentYear)
+                                     ->orderBy('total_flights', 'desc')
+                                     ->first();
+        
+        $rekorPenerbangan = $busiestDay ? $busiestDay->total_flights : 0;
+        $tanggalRekor = $busiestDay ? Carbon::parse($busiestDay->date)->format('d M') : '-';
         
         if ($daysCount > 0 && $currentTotal > 0) {
             $avgFlightPerHour = $currentTotal / $daysCount / 24;
@@ -104,7 +124,11 @@ class HomeController extends Controller
             'jam_sibuk' => $jamSibuk,
             'runway_status' => $runwayStatus,
             'runway_color' => $runwayColor,
-            'stress_level' => round($stressLevel, 1)
+            'stress_level' => round($stressLevel, 1),
+            'nama_bulan' => $namaBulanIni,
+            'rata_harian' => $rataHarian,
+            'rekor_penerbangan' => $rekorPenerbangan,
+            'tanggal_rekor' => $tanggalRekor
         ]);
     }
 }

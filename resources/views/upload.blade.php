@@ -223,6 +223,14 @@
             errorContainer.classList.remove('hidden');
         }
 
+        function resetFileInput() {
+            document.getElementById('dropzone-file').value = '';
+            document.getElementById('file-name').innerText = 'No File Chosen';
+            document.getElementById('selectedSheetInput').value = '';
+            document.getElementById('manualMonthInput').value = '';
+            document.getElementById('manualYearInput').value = '';
+        }
+
         function hideError() {
             document.getElementById('js-error-container').classList.add('hidden');
         }
@@ -257,7 +265,7 @@
                 } 
                 else if (data.status === 'invalid_format') {
                     showError(data.message); 
-                    document.getElementById('selectedSheetInput').value = ''; 
+                    resetFileInput(); 
                 }
                 else if (data.status === 'missing_date') {
                     document.getElementById('dateModal').classList.remove('hidden');
@@ -328,7 +336,11 @@
             startProcess();
         }
 
-        function closeWarningModal() { document.getElementById('warningModal').classList.add('hidden'); }
+        function closeWarningModal() {
+            document.getElementById('warningModal').classList.add('hidden');
+            resetFileInput();
+        }
+        
         function confirmOverwrite() { document.getElementById('uploadForm').submit(); }
     </script>
 </body>
