@@ -65,17 +65,22 @@
                 <p class="text-slate-500 text-sm">Pilih periode data untuk melihat laporan detail.</p>
             </div>
             
-            <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-xl">
-                <select id="filterMonth" onchange="updateYearOptions()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[120px]">    <option value="" disabled selected>Pilih Bulan</option>
-                    @foreach($availableDates->keys()->sort() as $month)
+            <div class="flex flex-wrap items-center gap-3 bg-slate-100 p-2 rounded-xl">
+                <select id="filterMonth" onchange="updateYearOptions()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[120px]">
+                    <option value="" disabled selected>Pilih Bulan</option>
+                    @foreach(array_keys($availableDates) as $month)
                         <option value="{{ $month }}">
                             {{ DateTime::createFromFormat('!m', $month)->format('F') }}
                         </option>
                     @endforeach
                 </select>
 
-                <select id="filterYear" disabled class="bg-slate-200 border border-slate-300 text-slate-500 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[100px] cursor-not-allowed">
+                <select id="filterYear" onchange="updateBranchOptions()" disabled class="bg-slate-200 border border-slate-300 text-slate-500 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[100px] cursor-not-allowed">
                     <option value="" disabled selected>Pilih Tahun</option>
+                </select>
+
+                <select id="filterBranch" disabled class="bg-slate-200 border border-slate-300 text-slate-500 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[120px] cursor-not-allowed">
+                    <option value="" disabled selected>Pilih Cabang</option>
                 </select>
 
                 <button onclick="loadData()" id="btn-show" class="bg-[#1F3C88] hover:bg-blue-800 text-white font-medium rounded-lg text-sm px-6 py-2.5 transition flex items-center gap-2 opacity-50 cursor-not-allowed" disabled>
@@ -135,7 +140,7 @@
                 </svg>
             </div>
             <h2 class="text-2xl font-bold text-slate-700">Belum ada data ditampilkan</h2>
-            <p class="text-slate-400 mt-2 max-w-md">Silakan pilih <strong>Bulan</strong> dan <strong>Tahun</strong> pada filter di atas, lalu klik tombol <strong>Tampilkan</strong>.</p>
+            <p class="text-slate-400 mt-2 max-w-md">Silakan lengkapi filter <strong>Bulan, Tahun, dan Cabang</strong> di atas, lalu klik <strong>Tampilkan</strong>.</p>
         </div>
 
         <div id="loading-state" class="hidden flex flex-col items-center justify-center py-32">
@@ -217,7 +222,7 @@
         @csrf
         <input type="hidden" name="month" id="exportMonth">
         <input type="hidden" name="year" id="exportYear">
-        <input type="hidden" name="type" id="exportType">
+        <input type="hidden" name="branch_code" id="exportBranch"> <input type="hidden" name="type" id="exportType">
         <input type="hidden" name="chart_peak_img" id="exportImgPeak">
         <input type="hidden" name="chart_traffic_img" id="exportImgTraffic">
         <input type="hidden" name="chart_tabulation_img" id="exportImgTabulation">
@@ -226,10 +231,12 @@
     <script>
         const dateMap = @json($availableDates);
         let chartPeak, chartTraffic, chartTabulation;
+        const branchNamesMap = @json($cabangs);
 
-            function updateYearOptions() {
+        function updateYearOptions() {
             const monthSelect = document.getElementById('filterMonth');
             const yearSelect = document.getElementById('filterYear');
+            const branchSelect = document.getElementById('filterBranch');
             const btnShow = document.getElementById('btn-show');
             const selectedMonth = monthSelect.value;
 
@@ -237,12 +244,17 @@
             yearSelect.disabled = true;
             yearSelect.classList.add('bg-slate-200', 'cursor-not-allowed');
             yearSelect.classList.remove('bg-white');
+
+            branchSelect.innerHTML = '<option value="" disabled selected>Pilih Cabang</option>';
+            branchSelect.disabled = true;
+            branchSelect.classList.add('bg-slate-200', 'cursor-not-allowed');
+            branchSelect.classList.remove('bg-white');
             
             btnShow.disabled = true;
             btnShow.classList.add('opacity-50', 'cursor-not-allowed');
 
             if (selectedMonth && dateMap[selectedMonth]) {
-                const years = dateMap[selectedMonth];
+                const years = Object.keys(dateMap[selectedMonth]).sort().reverse();
                 years.forEach(year => {
                     const option = document.createElement('option');
                     option.value = year;
@@ -255,7 +267,40 @@
             }
         }
 
-        document.getElementById('filterYear').addEventListener('change', function() {
+        function updateBranchOptions() {
+            const monthSelect = document.getElementById('filterMonth');
+            const yearSelect = document.getElementById('filterYear');
+            const branchSelect = document.getElementById('filterBranch');
+            const btnShow = document.getElementById('btn-show');
+            
+            const selectedMonth = monthSelect.value;
+            const selectedYear = yearSelect.value;
+
+            branchSelect.innerHTML = '<option value="" disabled selected>Pilih Cabang</option>';
+            branchSelect.disabled = true;
+            branchSelect.classList.add('bg-slate-200', 'cursor-not-allowed');
+            branchSelect.classList.remove('bg-white');
+            
+            btnShow.disabled = true;
+            btnShow.classList.add('opacity-50', 'cursor-not-allowed');
+
+            if (selectedMonth && selectedYear && dateMap[selectedMonth][selectedYear]) {
+                const branches = dateMap[selectedMonth][selectedYear].sort();
+                branches.forEach(branch => {
+                    const option = document.createElement('option');
+                    option.value = branch;
+                    const cityName = branchNamesMap[branch] ? branchNamesMap[branch] : '';
+                    option.textContent = cityName ? `${branch} - ${cityName}` : branch;
+                    
+                    branchSelect.appendChild(option);
+                });
+                branchSelect.disabled = false;
+                branchSelect.classList.remove('bg-slate-200', 'cursor-not-allowed');
+                branchSelect.classList.add('bg-white');
+            }
+        }
+
+        document.getElementById('filterBranch').addEventListener('change', function() {
             const btnShow = document.getElementById('btn-show');
             if (this.value) {
                 btnShow.disabled = false;
@@ -266,18 +311,22 @@
         function loadData() {
             const monthSelect = document.getElementById('filterMonth');
             const yearSelect = document.getElementById('filterYear');
+            const branchSelect = document.getElementById('filterBranch');
+            
             const monthVal = monthSelect.value;
             const yearVal = yearSelect.value;
+            const branchVal = branchSelect.value;
 
-            if (!monthVal || !yearVal) {
-                alert("Mohon pilih Bulan dan Tahun terlebih dahulu.");
+            if (!monthVal || !yearVal || !branchVal) {
+                alert("Mohon lengkapi Bulan, Tahun, dan Cabang.");
                 return;
             }
 
             const monthName = monthSelect.options[monthSelect.selectedIndex].text.trim();
-            const titlePeak = `Grafik Peak Movement Bulan ${monthName} Tahun ${yearVal} Cabang Surabaya`;
-            const titleTraffic = `Grafik Pergerakan Departure dan Arrival Bulan ${monthName} Tahun ${yearVal} Cabang Surabaya`;
-            const titleTabulation = `Grafik Tabulasi Peak Hour Pergerakan Bulan ${monthName} Tahun ${yearVal} Cabang Surabaya`;
+            const displayCityName = branchNamesMap[branchVal] ? branchNamesMap[branchVal] : branchVal;
+            const titlePeak = `Grafik Peak Movement Bulan ${monthName} Tahun ${yearVal} Cabang ${displayCityName}`;
+            const titleTraffic = `Grafik Pergerakan Departure dan Arrival Bulan ${monthName} Tahun ${yearVal} Cabang ${displayCityName}`;
+            const titleTabulation = `Grafik Tabulasi Peak Hour Pergerakan Bulan ${monthName} Tahun ${yearVal} Cabang ${displayCityName}`;
 
             document.getElementById('empty-state').classList.add('hidden');
             document.getElementById('dashboard-content').classList.add('hidden');
@@ -290,14 +339,12 @@
 
             btnShow.disabled = true;
             btnShow.classList.add('opacity-70');
-            
             btnExport.disabled = true;
             btnExport.classList.add('opacity-50', 'cursor-not-allowed');
-
             btnPDF.disabled = true;
             btnPDF.classList.add('opacity-50', 'cursor-not-allowed');
 
-            fetch(`{{ route('summary.data') }}?month=${monthVal}&year=${yearVal}`)
+            fetch(`{{ route('summary.data') }}?month=${monthVal}&year=${yearVal}&branch_code=${branchVal}`)
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('loading-state').classList.add('hidden');
@@ -315,7 +362,6 @@
 
                         btnExport.disabled = false;
                         btnExport.classList.remove('opacity-50', 'cursor-not-allowed');
-
                         btnPDF.disabled = false;
                         btnPDF.classList.remove('opacity-50', 'cursor-not-allowed');
 
@@ -378,22 +424,22 @@
             const maxPeak = data.peak_movement.length > 0 ? Math.max(...data.peak_movement, ...data.rwy_cap) : 0;
             const maxTraffic = data.traffic_total.length > 0 ? Math.max(...data.traffic_total) : 0;
             
-            const commonOptions = { 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                layout: { padding: { top: 10 } }, 
+            const commonOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 10 } },
                 scales: {
-                    x: { 
+                    x: {
                         ticks: { maxRotation: 45, minRotation: 45, autoSkip: true, font: { size: 11 } },
-                        grid:{ display:false }, 
+                        grid:{ display:false },
                         title: {
                             display: true, text: 'Tanggal', color: '#64748b',
                             font: { size: 12, weight: 'bold' }, padding: { top: 10 }
                         }
                     },
-                    y: { 
+                    y: {
                         beginAtZero: true,
-                        grid: { display: true }, 
+                        grid: { display: true },
                         title: {
                             display: true, text: 'Jumlah Penerbangan', color: '#64748b',
                             font: { size: 12, weight: 'bold' }
@@ -401,7 +447,7 @@
                     }
                 },
                 plugins: {
-                    legend: { 
+                    legend: {
                         position: 'bottom',
                         labels: { usePointStyle: true, padding: 20 }
                     },
@@ -416,23 +462,23 @@
                 data: {
                     labels: data.labels,
                     datasets: [
-                        { 
-                            label: 'Runway Capacity', 
-                            data: data.rwy_cap, 
-                            type: 'line', 
+                        {
+                            label: 'Runway Capacity',
+                            data: data.rwy_cap,
+                            type: 'line',
                             borderColor: '#b91c1c', backgroundColor: '#ffffff',
-                            borderWidth: 4, tension: 0.4, 
+                            borderWidth: 4, tension: 0.4,
                             pointBackgroundColor: '#ffffff', pointBorderColor: '#b91c1c', pointBorderWidth: 3, pointRadius: 5, pointHoverRadius: 7,
                             borderDash: [], order: 1,
                             pointStyle: 'circle',
-                            datalabels: { 
+                            datalabels: {
                                 align: 'top', anchor: 'center', color: '#b91c1c', offset: 8,
                                 backgroundColor: 'transparent', font: { weight: 'bold' }
                             }
                         },
-                        { 
-                            label: 'Peak Movement', 
-                            data: data.peak_movement, 
+                        {
+                            label: 'Peak Movement',
+                            data: data.peak_movement,
                             backgroundColor: '#1F3C88', borderRadius: 4, order: 2,
                             pointStyle: 'rect',
                             datalabels: {
@@ -468,40 +514,40 @@
                 data: {
                     labels: data.labels,
                     datasets: [
-                        { 
-                            type: 'line', 
-                            label: 'Total', 
-                            data: data.traffic_total, 
+                        {
+                            type: 'line',
+                            label: 'Total',
+                            data: data.traffic_total,
                             borderColor: '#b91c1c', backgroundColor: '#ffffff', borderWidth: 4, tension: 0.4,
                             pointBackgroundColor: '#ffffff', pointBorderColor: '#b91c1c', pointBorderWidth: 3,
                             pointRadius: 5, pointHoverRadius: 7, fill: false,
                             pointStyle: 'circle',
-                            datalabels: { 
+                            datalabels: {
                                 align: 'top', anchor: 'center', color: '#333', offset: 8,
                                 backgroundColor: 'transparent', font: { weight: 'bold' }
                             }
                         },
-                        { 
+                        {
                             type: 'bar', label: 'Dep', data: data.traffic_dep, backgroundColor: '#3b82f6',
                             pointStyle: 'rect',
-                            datalabels: { 
+                            datalabels: {
                                 rotation: function(context) { return context.dataset.data[context.dataIndex] == 0 ? 0 : -90; },
                                 anchor: function(context) { return context.dataset.data[context.dataIndex] == 0 ? 'end' : 'center'; },
                                 align: function(context) { return context.dataset.data[context.dataIndex] == 0 ? 'top' : 'center'; },
-                                color: function(context) { return context.dataset.data[context.dataIndex] == 0 ? '#64748b' : '#ffffff'; }, 
-                                font: { weight: 'bold', size: 11 } 
-                            } 
+                                color: function(context) { return context.dataset.data[context.dataIndex] == 0 ? '#64748b' : '#ffffff'; },
+                                font: { weight: 'bold', size: 11 }
+                            }
                         },
-                        { 
+                        {
                             type: 'bar', label: 'Arr', data: data.traffic_arr, backgroundColor: '#ef4444',
                             pointStyle: 'rect',
-                            datalabels: { 
+                            datalabels: {
                                 rotation: function(context) { return context.dataset.data[context.dataIndex] == 0 ? 0 : -90; },
                                 anchor: function(context) { return context.dataset.data[context.dataIndex] == 0 ? 'end' : 'center'; },
                                 align: function(context) { return context.dataset.data[context.dataIndex] == 0 ? 'top' : 'center'; },
-                                color: function(context) { return context.dataset.data[context.dataIndex] == 0 ? '#64748b' : '#ffffff'; }, 
-                                font: { weight: 'bold', size: 11 } 
-                            } 
+                                color: function(context) { return context.dataset.data[context.dataIndex] == 0 ? '#64748b' : '#ffffff'; },
+                                font: { weight: 'bold', size: 11 }
+                            }
                         }
                     ]
                 },
@@ -530,9 +576,9 @@
                 type: 'bar',
                 data: {
                     labels: data.peak_hour_keys,
-                    datasets: [{ 
-                        label: 'Frekuensi', 
-                        data: data.peak_hour_values, 
+                    datasets: [{
+                        label: 'Frekuensi',
+                        data: data.peak_hour_values,
                         backgroundColor: '#1F3C88', borderRadius: 4,
                         datalabels: {
                             color: function(context) { return context.dataset.data[context.dataIndex] == 0 ? '#64748b' : '#ffffff'; },
@@ -542,31 +588,31 @@
                         }
                     }]
                 },
-                options: { 
-                    ...commonOptions, 
-                    scales: { 
-                        x: { 
-                            ticks: { maxRotation: 90, minRotation: 90, font: { size: 10 } }, 
+                options: {
+                    ...commonOptions,
+                    scales: {
+                        x: {
+                            ticks: { maxRotation: 90, minRotation: 90, font: { size: 10 } },
                             grid: { display: false },
                             title: {
                                 display: true, text: 'Jam (UTC)', color: '#64748b',
                                 font: { size: 12, weight: 'bold' }, padding: { top: 10 }
                             }
                         },
-                        y: { 
+                        y: {
                             beginAtZero: true, ticks: { stepSize: 1 }, max: maxFreq + 2,
-                            grid: { display: true }, 
+                            grid: { display: true },
                             title: {
                                 display: true, text: 'Frekuensi', color: '#64748b',
                                 font: { size: 12, weight: 'bold' }
                             }
-                        } 
+                        }
                     },
                     plugins: {
-                        legend: { 
+                        legend: {
                             position: 'bottom',
                             labels: {
-                                usePointStyle: false, 
+                                usePointStyle: false,
                                 boxWidth: 40
                             }
                         },
@@ -581,7 +627,7 @@
                     }
                 }
             });
-        }   
+        }
 
     const dropdownBtn = document.getElementById('dropdownExportBtn');
     const dropdownMenu = document.getElementById('dropdownExport');
@@ -601,9 +647,10 @@
     function exportExcel(type) {
         const monthVal = document.getElementById('filterMonth').value;
         const yearVal = document.getElementById('filterYear').value;
+        const branchVal = document.getElementById('filterBranch').value;
 
-        if (!monthVal || !yearVal) {
-            alert("Mohon pilih Bulan dan Tahun, lalu klik Tampilkan terlebih dahulu.");
+        if (!monthVal || !yearVal || !branchVal) {
+            alert("Mohon lengkapi filter lalu klik Tampilkan terlebih dahulu.");
             return;
         }
 
@@ -616,7 +663,7 @@
             const ctx = chart.canvas.getContext('2d');
             ctx.save(); ctx.globalCompositeOperation = 'destination-over';
             ctx.fillStyle = 'white'; ctx.fillRect(0, 0, chart.canvas.width, chart.canvas.height);
-            const img = chart.canvas.toDataURL('image/jpeg', 0.8); // Format JPEG 80%
+            const img = chart.canvas.toDataURL('image/jpeg', 0.8);
             ctx.restore();
             return img;
         };
@@ -627,6 +674,7 @@
 
         document.getElementById('exportMonth').value = monthVal;
         document.getElementById('exportYear').value = yearVal;
+        document.getElementById('exportBranch').value = branchVal;
         document.getElementById('exportType').value = type;
         document.getElementById('exportImgPeak').value = imgPeak;
         document.getElementById('exportImgTraffic').value = imgTraffic;
@@ -639,9 +687,10 @@
     function exportPDF() {
         const monthVal = document.getElementById('filterMonth').value;
         const yearVal = document.getElementById('filterYear').value;
+        const branchVal = document.getElementById('filterBranch').value;
 
-        if (!monthVal || !yearVal) {
-            alert("Mohon pilih Bulan dan Tahun, lalu klik Tampilkan terlebih dahulu.");
+        if (!monthVal || !yearVal || !branchVal) {
+            alert("Mohon lengkapi filter lalu klik Tampilkan terlebih dahulu.");
             return;
         }
 
@@ -656,6 +705,7 @@
 
         document.getElementById('exportMonth').value = monthVal;
         document.getElementById('exportYear').value = yearVal;
+        document.getElementById('exportBranch').value = branchVal;
         document.getElementById('exportImgPeak').value = imgPeak;
         document.getElementById('exportImgTraffic').value = imgTraffic;
         document.getElementById('exportImgTabulation').value = imgTabulation;
@@ -675,27 +725,36 @@
         const urlParams = new URLSearchParams(window.location.search);
         const paramMonth = urlParams.get('month');
         const paramYear = urlParams.get('year');
+        const paramBranch = urlParams.get('branch_code');
 
         if (paramMonth && paramYear) {
             const monthSelect = document.getElementById('filterMonth');
             const yearSelect = document.getElementById('filterYear');
+            const branchSelect = document.getElementById('filterBranch');
             const btnShow = document.getElementById('btn-show');
 
             monthSelect.value = paramMonth;
             updateYearOptions();
 
             let yearExists = Array.from(yearSelect.options).some(option => option.value == paramYear);
-            
             if (yearExists) {
                 yearSelect.value = paramYear;
-                yearSelect.disabled = false;
-                btnShow.disabled = false;
-                btnShow.classList.remove('opacity-50', 'cursor-not-allowed');
+                updateBranchOptions();
+                
+                if (paramBranch) {
+                    let branchExists = Array.from(branchSelect.options).some(option => option.value == paramBranch);
+                    if (branchExists) {
+                        branchSelect.value = paramBranch;
+                        btnShow.disabled = false;
+                        btnShow.classList.remove('opacity-50', 'cursor-not-allowed');
 
-                loadData();
+                        loadData();
+                    }
+                }
             }
         }
     });
     </script>
 </body>
 </html>
+    

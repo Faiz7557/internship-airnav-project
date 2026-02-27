@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UploadController;
 use App\Http\Controllers\SummaryController;
+use App\Http\Controllers\CabangController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -16,3 +17,6 @@ Route::get('/summary', [SummaryController::class, 'index'])->name('summary');
 Route::get('/summary/data', [SummaryController::class, 'getData'])->name('summary.data');
 Route::post('/summary/export', [SummaryController::class, 'exportExcel'])->name('summary.export');
 Route::post('/summary/export-pdf', [App\Http\Controllers\SummaryController::class, 'exportPDF'])->name('summary.export_pdf');
+
+Route::post('/cabang', [CabangController::class, 'store'])->name('cabang.store');
+Route::put('/cabang/{id}', [CabangController::class, 'update'])->name('cabang.update');

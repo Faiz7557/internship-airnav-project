@@ -8,12 +8,14 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\Cabang;
 
 class UploadController extends Controller
 {
     public function index()
     {
-        return view('upload');
+        $cabangs = Cabang::all();
+        return view('upload', compact('cabangs'));
     }
 
     public function check(Request $request)
@@ -27,6 +29,7 @@ class UploadController extends Controller
             
             $manualMonth = $request->input('manual_month');
             $manualYear = $request->input('manual_year');
+            $branchCode = $request->input('branch_code');
 
             $reader = IOFactory::createReaderForFile($filePath);
             $reader->setReadDataOnly(true);
@@ -83,6 +86,7 @@ class UploadController extends Controller
             
             $exists = DailyFlightStat::whereYear('date', $tahun)
                         ->whereMonth('date', $bulan)
+                        ->where('branch_code', $branchCode)
                         ->exists();
 
             $daysInMonth = Carbon::create($tahun, $bulan)->daysInMonth;
@@ -97,7 +101,7 @@ class UploadController extends Controller
                 'days_in_month' => $daysInMonth,
                 'bulan_nama' => $bulanNama,
                 'message' => $exists
-                    ? "Data periode " . $bulanNama . " sudah ada."
+                    ? "Data periode " . $bulanNama . " untuk cabang " . $branchCode . " sudah ada."
                     : "Data aman."
             ]);
 
@@ -111,6 +115,7 @@ class UploadController extends Controller
         $request->validate([
             'file' => 'required|mimes:xls,xlsx',
             'capacity_data' => 'required',
+            'branch_code' => 'required',
         ]);
 
         try {
@@ -122,6 +127,7 @@ class UploadController extends Controller
             
             $manualMonth = $request->input('manual_month');
             $manualYear = $request->input('manual_year');
+            $branchCode = $request->input('branch_code'); // Mengambil kode cabang
             $capacities = json_decode($request->input('capacity_data'), true);
 
             $reader = IOFactory::createReaderForFile($filePath);
@@ -196,7 +202,7 @@ class UploadController extends Controller
                 }
 
                 DailyFlightStat::updateOrCreate(
-                    ['date' => $currentDate, 'branch_code' => 'WARR'],
+                    ['date' => $currentDate, 'branch_code' => $branchCode],
                     [
                         'total_dep' => $totalDep, 'total_arr' => $totalArr, 'total_flights' => $totalFlights,
                         'dom_dep' => $domDep, 'dom_arr' => $domArr,
@@ -211,7 +217,8 @@ class UploadController extends Controller
             DB::commit();
             return redirect()->route('summary', [
                 'month' => $bulan,
-                'year' => $tahun
+                'year' => $tahun,
+                'branch_code' => $branchCode
             ])->with('success', 'Data berhasil diproses.');
 
         } catch (Exception $e) {

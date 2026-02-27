@@ -64,7 +64,7 @@
                     </svg>
                 </div>
                 <div class="text-left w-full">
-                    <h4 class="text-sm font-bold text-red-700">File Tidak Sesuai</h4>
+                    <h4 class="text-sm font-bold text-red-700">Terjadi Kesalahan</h4>
                     <p id="js-error-message" class="text-xs text-red-500 mt-0.5 leading-snug"></p>
                 </div>
                 <button onclick="hideError()" class="ml-auto text-red-300 hover:text-red-500 transition">✕</button>
@@ -86,6 +86,21 @@
                         <input id="dropzone-file" name="file" type="file" class="hidden" required onchange="handleFileSelect(this)" />
                     </label>
                     <p class="text-xs text-slate-400 mt-2 text-center">Supported: .xls or .xlsx according to Airnav Template</p>
+                </div>
+
+                <div>
+                    <label for="branchCodeInput" class="block text-sm font-bold text-[#1F3C88] mb-2 text-left">Cabang / Branch</label>
+                    <div class="relative">
+                        <select name="branch_code" id="branchCodeInput" class="w-full appearance-none bg-slate-50 border-2 border-slate-200 text-[#1F3C88] font-semibold py-3 px-4 pr-8 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-blue-500 transition cursor-pointer" required>
+                            <option value="" disabled selected>-- Pilih Cabang --</option>
+                            @foreach($cabangs as $cabang)
+                                <option value="{{ $cabang->kode_cabang }}">{{ $cabang->kode_cabang }} - {{ $cabang->nama }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#1F3C88]">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="button" onclick="startProcess()" id="btn-submit" class="w-full bg-[#1F3C88] hover:bg-blue-800 text-white font-bold py-4 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-lg">
@@ -259,6 +274,12 @@
                 return;
             }
 
+            const branchInput = document.getElementById('branchCodeInput');
+            if (!branchInput.value) {
+                showError("Mohon pilih Cabang / Branch terlebih dahulu.");
+                return;
+            }
+
             hideError();
             setLoading(true);
 
@@ -267,6 +288,7 @@
             formData.append('sheet_name', document.getElementById('selectedSheetInput').value);
             formData.append('manual_month', document.getElementById('manualMonthInput').value);
             formData.append('manual_year', document.getElementById('manualYearInput').value);
+            formData.append('branch_code', branchInput.value);
             formData.append('_token', '{{ csrf_token() }}');
 
             fetch('{{ route("upload.check") }}', {

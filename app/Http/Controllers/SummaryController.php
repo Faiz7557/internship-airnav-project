@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\DailyFlightStat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use App\Models\Cabang;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -18,25 +19,42 @@ class SummaryController extends Controller
 {
     public function index()
     {
-        $rawDates = DailyFlightStat::select(DB::raw('YEAR(date) as year, MONTH(date) as month'))
+        $rawDates = DailyFlightStat::select(DB::raw('YEAR(date) as year, MONTH(date) as month, branch_code'))
             ->distinct()
             ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
             ->get();
 
-        $availableDates = $rawDates->groupBy('month')->map(function ($items) {
-            return $items->pluck('year')->values();
-        });
+        $availableDates = [];
+        foreach ($rawDates as $row) {
+            $m = $row->month;
+            $y = $row->year;
+            $b = $row->branch_code;
 
-        return view('summary', compact('availableDates'));
+            if (!isset($availableDates[$m])) {
+                $availableDates[$m] = [];
+            }
+            if (!isset($availableDates[$m][$y])) {
+                $availableDates[$m][$y] = [];
+            }
+            if (!in_array($b, $availableDates[$m][$y])) {
+                $availableDates[$m][$y][] = $b;
+            }
+        }
+
+        $cabangs = Cabang::pluck('nama', 'kode_cabang');
+
+        return view('summary', compact('availableDates', 'cabangs'));
     }
 
     public function getData(Request $request)
     {
         $month = $request->month;
         $year = $request->year;
-
+        $branchCode = $request->branch_code;
         $data = DailyFlightStat::whereYear('date', $year)
                     ->whereMonth('date', $month)
+                    ->where('branch_code', $branchCode)
                     ->orderBy('date', 'asc')
                     ->get();
 
@@ -58,11 +76,11 @@ class SummaryController extends Controller
         }
 
         foreach ($data as $row) {
-            $dateLabel = Carbon::parse($row->date)->format('d'); 
+            $dateLabel = Carbon::parse($row->date)->format('d');
             $labels[] = $dateLabel;
 
             $peakMovementData[] = $row->peak_hour_count;
-            $rwyCapacityData[] = $row->runway_capacity; 
+            $rwyCapacityData[] = $row->runway_capacity;
 
             $trafficTotal[] = $row->total_flights;
             $trafficDep[] = $row->total_dep;
@@ -76,7 +94,7 @@ class SummaryController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'table_data' => $data, 
+            'table_data' => $data,
             'charts' => [
                 'labels' => $labels,
                 'peak_movement' => $peakMovementData,
@@ -89,15 +107,17 @@ class SummaryController extends Controller
             ]
         ]);
     }
-    
+
     public function exportExcel(Request $request)
     {
         $month = $request->input('month');
         $year = $request->input('year');
-        $type = $request->input('type', 'all'); 
+        $branchCode = $request->input('branch_code', 'WARR');
+        $type = $request->input('type', 'all');
 
         $data = DailyFlightStat::whereYear('date', $year)
                 ->whereMonth('date', $month)
+                ->where('branch_code', $branchCode)
                 ->orderBy('date', 'asc')
                 ->get();
         
@@ -111,7 +131,7 @@ class SummaryController extends Controller
             $peakHours[$k] = 0;
         }
         foreach ($data as $row) {
-            $hour = substr($row->peak_hour, 0, 5); 
+            $hour = substr($row->peak_hour, 0, 5);
             if (isset($peakHours[$hour])) $peakHours[$hour]++;
         }
 
@@ -137,21 +157,13 @@ class SummaryController extends Controller
         $spreadsheet->setActiveSheetIndex(0);
 
         $namaBulan = Carbon::create($year, $month)->format('F_Y');
-        if ($type == 'table') {
-            $fileName = 'Tabel_Movement_' . $namaBulan . '.xlsx';
-        } 
-        elseif ($type == 'peak') {
-            $fileName = 'Grafik_Movement_' . $namaBulan . '.xlsx';
-        } 
-        elseif ($type == 'traffic') {
-            $fileName = 'Grafik_Dep_Arr_' . $namaBulan . '.xlsx';
-        } 
-        elseif ($type == 'tabulation') {
-            $fileName = 'Grafik_Peak_Hour_' . $namaBulan . '.xlsx';
-        } 
-        else {
-            $fileName = 'Laporan_Lengkap_' . $namaBulan . '.xlsx';
-        }
+        $namaFileBasis = '_' . $branchCode . '_' . $namaBulan . '.xlsx';
+
+        if ($type == 'table') { $fileName = 'Tabel_Movement' . $namaFileBasis; }
+        elseif ($type == 'peak') { $fileName = 'Grafik_Movement' . $namaFileBasis; }
+        elseif ($type == 'traffic') { $fileName = 'Grafik_Dep_Arr' . $namaFileBasis; }
+        elseif ($type == 'tabulation') { $fileName = 'Grafik_Peak_Hour' . $namaFileBasis; }
+        else { $fileName = 'Laporan_Lengkap' . $namaFileBasis; }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $fileName . '"');
@@ -168,7 +180,7 @@ class SummaryController extends Controller
         $sheet->setTitle('Movement TWR-AFIS');
 
         $headers1 = ['Tanggal', 'Dep', 'Arr', 'Total', 'Jam Peak', 'Jml Peak', 'Rwy Cap', 'Cabang'];
-        $sheet->fromArray($headers1, null, 'A1', true); 
+        $sheet->fromArray($headers1, null, 'A1', true);
         
         $rows1 = [];
         foreach ($data as $item) {
@@ -179,18 +191,18 @@ class SummaryController extends Controller
                 $item->runway_capacity, $item->branch_code
             ];
         }
-        $sheet->fromArray($rows1, null, 'A2', true); 
+        $sheet->fromArray($rows1, null, 'A2', true);
         $lastRow1 = count($rows1) + 1;
         $this->applyTableStyle($sheet, 'A1:H'.$lastRow1);
 
         $headers2 = ['Jam (UTC)', 'Frekuensi Kejadian'];
-        $sheet->fromArray($headers2, null, 'J1', true); 
+        $sheet->fromArray($headers2, null, 'J1', true);
         
         $rows2 = [];
         foreach ($peakData as $hour => $count) {
             $rows2[] = [$hour, $count];
         }
-        $sheet->fromArray($rows2, null, 'J2', true); 
+        $sheet->fromArray($rows2, null, 'J2', true);
         $lastRow2 = count($rows2) + 1;
         $this->applyTableStyle($sheet, 'J1:K'.$lastRow2);
     }
@@ -199,9 +211,7 @@ class SummaryController extends Controller
     {
         $sheet = $spreadsheet->createSheet();
         $sheet->setTitle($sheetTitle);
-        
-        $sheet->setShowGridlines(false); 
-
+        $sheet->setShowGridlines(false);
         $this->insertChartImage($sheet, $imageBase64, 'B2', $imageName);
     }
 
@@ -219,7 +229,7 @@ class SummaryController extends Controller
             $drawing->setDescription($name);
             $drawing->setPath($tempImage);
             $drawing->setCoordinates($coordinates);
-            $drawing->setHeight(450); 
+            $drawing->setHeight(450);
             $drawing->setWorksheet($sheet);
         }
     }
@@ -228,9 +238,11 @@ class SummaryController extends Controller
     {
         $month = $request->input('month');
         $year = $request->input('year');
+        $branchCode = $request->input('branch_code', 'WARR');
         
         $data = DailyFlightStat::whereYear('date', $year)
                 ->whereMonth('date', $month)
+                ->where('branch_code', $branchCode)
                 ->orderBy('date', 'asc')
                 ->get();
 
@@ -253,7 +265,7 @@ class SummaryController extends Controller
         $chartTabulation = $request->input('chart_tabulation_img');
 
         $namaBulan = Carbon::create($year, $month)->format('F_Y');
-        $fileName = 'Laporan_PDF_' . $namaBulan . '.pdf';
+        $fileName = 'Laporan_PDF_' . $branchCode . '_' . $namaBulan . '.pdf';
 
         $pdf = app('dompdf.wrapper');
         $pdf->loadView('pdf.summary_report', compact(
@@ -276,7 +288,7 @@ class SummaryController extends Controller
             ]
         ]);
 
-        $parts = explode(':', $range); 
+        $parts = explode(':', $range);
         $startCol = preg_replace('/[0-9]/', '', $parts[0]);
         $endCol = preg_replace('/[0-9]/', '', $parts[1]);
         
