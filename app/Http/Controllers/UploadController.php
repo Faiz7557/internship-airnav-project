@@ -7,13 +7,16 @@ use App\Models\DailyFlightStat;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Exception;
-use PhpOffice\PhpSpreadsheet\IOFactory; 
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use App\Models\Cabang;
+use App\Models\RawFlightData;
 
 class UploadController extends Controller
 {
     public function index()
     {
-        return view('upload');
+        $cabangs = Cabang::all();
+        return view('upload', compact('cabangs'));
     }
 
     public function check(Request $request)
@@ -27,9 +30,10 @@ class UploadController extends Controller
             
             $manualMonth = $request->input('manual_month');
             $manualYear = $request->input('manual_year');
+            $branchCode = $request->input('branch_code');
 
             $reader = IOFactory::createReaderForFile($filePath);
-            $reader->setReadDataOnly(true); 
+            $reader->setReadDataOnly(true);
 
             $allSheets = $reader->listWorksheetNames($filePath);
 
@@ -57,7 +61,7 @@ class UploadController extends Controller
 
             if (!$headerFound) {
                 return response()->json([
-                    'status' => 'invalid_format', 
+                    'status' => 'invalid_format',
                     'sheet_used' => $targetSheet,
                     'message' => "Format file pada sheet '$targetSheet' tidak sesuai template. Pastikan ada kolom 'Time'."
                 ]);
@@ -83,14 +87,22 @@ class UploadController extends Controller
             
             $exists = DailyFlightStat::whereYear('date', $tahun)
                         ->whereMonth('date', $bulan)
+                        ->where('branch_code', $branchCode)
                         ->exists();
+
+            $daysInMonth = Carbon::create($tahun, $bulan)->daysInMonth;
+            $bulanNama = Carbon::create($tahun, $bulan)->translatedFormat('F Y');
 
             return response()->json([
                 'status' => 'success',
                 'exists' => $exists,
                 'sheet_used' => $targetSheet,
-                'message' => $exists 
-                    ? "Data periode " . Carbon::create($tahun, $bulan)->format('F Y') . " sudah ada."
+                'bulan' => $bulan,
+                'tahun' => $tahun,
+                'days_in_month' => $daysInMonth,
+                'bulan_nama' => $bulanNama,
+                'message' => $exists
+                    ? "Data periode " . $bulanNama . " untuk cabang " . $branchCode . " sudah ada."
                     : "Data aman."
             ]);
 
@@ -103,11 +115,12 @@ class UploadController extends Controller
     {
         $request->validate([
             'file' => 'required|mimes:xls,xlsx',
-            'rwy_capacity' => 'required|numeric',
+            'capacity_data' => 'required',
+            'branch_code' => 'required',
         ]);
 
         try {
-            DB::beginTransaction(); 
+            DB::beginTransaction();
 
             $file = $request->file('file');
             $filePath = $file->getPathname();
@@ -115,6 +128,8 @@ class UploadController extends Controller
             
             $manualMonth = $request->input('manual_month');
             $manualYear = $request->input('manual_year');
+            $branchCode = $request->input('branch_code');
+            $capacities = json_decode($request->input('capacity_data'), true);
 
             $reader = IOFactory::createReaderForFile($filePath);
             $reader->setReadDataOnly(true);
@@ -145,27 +160,30 @@ class UploadController extends Controller
                 }
             }
 
-            $idx_start_hour = $headerRowIndex + 1; $idx_end_hour = $headerRowIndex + 24; 
-            $idx_all_arr = $headerRowIndex + 26; $idx_all_dep = $headerRowIndex + 27; 
-            $idx_dom_arr = $headerRowIndex + 28; $idx_dom_dep = $headerRowIndex + 29; 
-            $idx_int_arr = $headerRowIndex + 30; $idx_int_dep = $headerRowIndex + 31; 
-            $idx_trg_arr = $headerRowIndex + 32; $idx_trg_dep = $headerRowIndex + 33; 
+            $idx_start_hour = $headerRowIndex + 1; $idx_end_hour = $headerRowIndex + 24;
+            $idx_dom_arr = $headerRowIndex + 28; $idx_dom_dep = $headerRowIndex + 29;
+            $idx_int_arr = $headerRowIndex + 30; $idx_int_dep = $headerRowIndex + 31;
+            $idx_trg_arr = $headerRowIndex + 32; $idx_trg_dep = $headerRowIndex + 33;
 
             for ($day = 1; $day <= 31; $day++) {
-                $colIndex = $day; 
+                $colIndex = $day;
                 if (!checkdate($bulan, $day, $tahun)) continue;
-                if (!isset($rawArray[$headerRowIndex][$colIndex])) continue; 
+                if (!isset($rawArray[$headerRowIndex][$colIndex])) continue;
 
                 $currentDate = Carbon::createFromDate($tahun, $bulan, $day)->format('Y-m-d');
                 $maxMovement = 0; $peakHourLabel = '00:00';
+                $rawHourlyData = [];
 
                 for ($r = $idx_start_hour; $r <= $idx_end_hour; $r++) {
                     $val = (int) ($rawArray[$r][$colIndex] ?? 0);
                     if ($val > $maxMovement) {
                         $maxMovement = $val;
-                        $rawLabel = (string)$rawArray[$r][0]; 
+                        $rawLabel = (string)$rawArray[$r][0];
                         $peakHourLabel = str_replace('.', ':', substr($rawLabel, 0, 5));
                     }
+
+                    $hourIndex = str_pad($r - $idx_start_hour, 2, '0', STR_PAD_LEFT);
+                    $rawHourlyData['h' . $hourIndex] = $val;
                 }
                 
                 $domArr = (int) ($rawArray[$idx_dom_arr][$colIndex] ?? 0);
@@ -178,23 +196,39 @@ class UploadController extends Controller
                 $totalDep = $domDep + $intDep;
                 $totalFlights = $totalArr + $totalDep;
 
+                $currentCapacity = 31;
+                if (is_array($capacities)) {
+                    foreach ($capacities as $cap) {
+                        if ($day >= (int)$cap['start'] && $day <= (int)$cap['end']) {
+                            $currentCapacity = (int)$cap['capacity'];
+                            break;
+                        }
+                    }
+                }
+
                 DailyFlightStat::updateOrCreate(
-                    ['date' => $currentDate, 'branch_code' => 'WARR'],
+                    ['date' => $currentDate, 'branch_code' => $branchCode],
                     [
                         'total_dep' => $totalDep, 'total_arr' => $totalArr, 'total_flights' => $totalFlights,
                         'dom_dep' => $domDep, 'dom_arr' => $domArr,
                         'int_dep' => $intDep, 'int_arr' => $intArr,
                         'training_dep' => $trainingDep, 'training_arr' => $trainingArr,
                         'peak_hour' => $peakHourLabel, 'peak_hour_count' => $maxMovement,
-                        'runway_capacity' => $request->rwy_capacity
+                        'runway_capacity' => $currentCapacity
                     ]
+                );
+
+                RawFlightData::updateOrCreate(
+                    ['date' => $currentDate, 'kode_cabang' => $branchCode],
+                    $rawHourlyData
                 );
             }
 
-            DB::commit(); 
+            DB::commit();
             return redirect()->route('summary', [
-                'month' => $bulan, 
-                'year' => $tahun
+                'month' => $bulan,
+                'year' => $tahun,
+                'branch_code' => $branchCode
             ])->with('success', 'Data berhasil diproses.');
 
         } catch (Exception $e) {
@@ -229,17 +263,17 @@ class UploadController extends Controller
     private function convertMonthToNumber($monthName)
     {
         $months = [
-            'januari' => 1, 'january' => 1, 
-            'februari' => 2, 'february' => 2, 
-            'maret' => 3, 'march' => 3, 
-            'april' => 4, 
-            'mei' => 5, 'may' => 5, 
-            'juni' => 6, 'june' => 6, 
-            'juli' => 7, 'july' => 7, 
-            'agustus' => 8, 'august' => 8, 
-            'september' => 9, 
-            'oktober' => 10, 'october' => 10, 
-            'november' => 11, 
+            'januari' => 1, 'january' => 1,
+            'februari' => 2, 'february' => 2,
+            'maret' => 3, 'march' => 3,
+            'april' => 4,
+            'mei' => 5, 'may' => 5,
+            'juni' => 6, 'june' => 6,
+            'juli' => 7, 'july' => 7,
+            'agustus' => 8, 'august' => 8,
+            'september' => 9,
+            'oktober' => 10, 'october' => 10,
+            'november' => 11,
             'desember' => 12, 'december' => 12
         ];
         return $months[strtolower($monthName)] ?? null;

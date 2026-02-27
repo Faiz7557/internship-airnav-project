@@ -34,27 +34,27 @@
             font-size: 9pt;
         }
         
-        table { 
-            width: 100%; 
-            border-collapse: separate; 
-            border-spacing: 0; 
-            margin-bottom: 15px; 
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 15px;
             font-size: 8pt;
-            border: 1px solid #cbd5e1; 
-            border-radius: 10px; 
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
             overflow: hidden;
         }
 
         th, td {
-            border-bottom: 1px solid #e2e8f0; 
-            padding: 6px; 
-            text-align: center; 
+            border-bottom: 1px solid #e2e8f0;
+            padding: 6px;
+            text-align: center;
         }
 
         th {
-            background-color: #1F3C88; 
-            color: #ffffff; 
-            font-weight: bold; 
+            background-color: #1F3C88;
+            color: #ffffff;
+            font-weight: bold;
             text-transform: uppercase;
             font-size: 8pt;
             letter-spacing: 0.5px;
@@ -75,11 +75,6 @@
             font-weight: bold;
         }
 
-        .table-peak {
-            width: 60%;
-            margin-left: 0;
-        }
-
         .chart-container {
             text-align: center;
             margin-bottom: 30px;
@@ -95,22 +90,20 @@
         .page-break {
             page-break-after: always;
         }
-        
-        .footer {
-            position: fixed;
-            bottom: -10px;
-            left: 0;
-            right: 0;
-            font-size: 8pt;
-            text-align: right;
-            color: #aaa;
-        }
     </style>
 </head>
 <body>
 
+    @php
+        $branchCode = $data->first()->branch_code ?? 'WARR';
+        $branchNamesMap = \App\Models\Cabang::pluck('nama', 'kode_cabang')->toArray();
+        
+        $namaCabang = $branchNamesMap[$branchCode] ?? $branchCode;
+        $periodeBulan = str_replace('_', ' ', $namaBulan);
+    @endphp
+
     <h2>Laporan Data Pergerakan Pesawat</h2>
-    <p>Periode: {{ $namaBulan }} (Cabang Surabaya)</p>
+    <p>Periode: {{ $periodeBulan }} (Cabang {{ $namaCabang }})</p>
 
     <h3>1. Data Daily Movement</h3>
     <table>

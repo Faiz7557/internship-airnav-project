@@ -10,6 +10,7 @@ use App\Http\Controllers\UploadController;
 use App\Http\Controllers\SummaryController;
 use App\Http\Controllers\Admin\EventController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\CabangController;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
@@ -27,3 +28,7 @@ Route::post('/summary/export', [SummaryController::class, 'exportExcel'])->name(
 Route::post('/dashboard/events', [EventController::class, 'store'])->name('dashboard.events.store');
 Route::delete('/dashboard/events/{event}', [EventController::class, 'destroy'])->name('dashboard.events.destroy');
 Route::post('/summary/export-pdf', [App\Http\Controllers\SummaryController::class, 'exportPDF'])->name('summary.export_pdf');
+Route::post('/summary/export-pdf', [App\Http\Controllers\SummaryController::class, 'exportPDF'])->name('summary.export_pdf');
+
+Route::post('/cabang', [CabangController::class, 'store'])->name('cabang.store');
+Route::put('/cabang/{id}', [CabangController::class, 'update'])->name('cabang.update');

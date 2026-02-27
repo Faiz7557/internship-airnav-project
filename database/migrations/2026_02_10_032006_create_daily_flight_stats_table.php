@@ -33,7 +33,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->unique(['date', 'branch_code']);            
+            $table->unique(['date', 'branch_code']);
             $table->index('date');
         });
     }

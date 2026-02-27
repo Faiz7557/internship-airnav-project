@@ -20,24 +20,15 @@
         </div>
         <div class="flex items-center gap-2 font-medium text-white">
             <a href="{{ route('home') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-full transition duration-300 hover:bg-white/10 hover:backdrop-blur-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-                    <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 8.2 1.966 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-8.2-1.966-9.336-6.41zM10 15a5 5 0 100-10 5 5 0 000 10z" clip-rule="evenodd" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" /><path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 8.2 1.966 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-8.2-1.966-9.336-6.41zM10 15a5 5 0 100-10 5 5 0 000 10z" clip-rule="evenodd" /></svg>
                 Home
             </a>
-
             <a href="#" class="flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-full transition shadow-sm border border-white/10">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                    <path fill-rule="evenodd" d="M5.5 17a4.5 4.5 0 01-1.44-8.765 4.5 4.5 0 018.302-3.046 3.5 3.5 0 014.504 4.272A4 4 0 0115 17H5.5zm3.75-2.75a.75.75 0 001.5 0V9.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0l-3.25 3.5a.75.75 0 101.1 1.02l1.95-2.1v4.59z" clip-rule="evenodd" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M5.5 17a4.5 4.5 0 01-1.44-8.765 4.5 4.5 0 018.302-3.046 3.5 3.5 0 014.504 4.272A4 4 0 0115 17H5.5zm3.75-2.75a.75.75 0 001.5 0V9.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0l-3.25 3.5a.75.75 0 101.1 1.02l1.95-2.1v4.59z" clip-rule="evenodd" /></svg>
                 Upload
             </a>
-            
             <a href="{{ route('summary') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-full transition duration-300 hover:bg-white/10 hover:backdrop-blur-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
-                    <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 003 3.5v13A1.5 1.5 0 004.5 18h11a1.5 1.5 0 001.5-1.5V7.621a1.5 1.5 0 00-.44-1.06l-4.12-4.122A1.5 1.5 0 0011.378 2H4.5zm2.25 8.5a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 3a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clip-rule="evenodd" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5"><path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 003 3.5v13A1.5 1.5 0 004.5 18h11a1.5 1.5 0 001.5-1.5V7.621a1.5 1.5 0 00-.44-1.06l-4.12-4.122A1.5 1.5 0 0011.378 2H4.5zm2.25 8.5a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 3a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clip-rule="evenodd" /></svg>
                 Summary
             </a>
             
@@ -76,7 +67,7 @@
                     </svg>
                 </div>
                 <div class="text-left w-full">
-                    <h4 class="text-sm font-bold text-red-700">File Tidak Sesuai</h4>
+                    <h4 class="text-sm font-bold text-red-700">Terjadi Kesalahan</h4>
                     <p id="js-error-message" class="text-xs text-red-500 mt-0.5 leading-snug"></p>
                 </div>
                 <button onclick="hideError()" class="ml-auto text-red-300 hover:text-red-500 transition">✕</button>
@@ -87,6 +78,7 @@
                 <input type="hidden" name="sheet_name" id="selectedSheetInput">
                 <input type="hidden" name="manual_month" id="manualMonthInput">
                 <input type="hidden" name="manual_year" id="manualYearInput">
+                <input type="hidden" name="capacity_data" id="capacityDataInput">
 
                 <div class="relative group">
                     <label for="dropzone-file" id="dropzone-box" class="flex flex-col items-center justify-center w-full h-16 border-2 border-[#1F3C88] border-dashed rounded-full cursor-pointer bg-slate-50 hover:bg-blue-50 transition overflow-hidden group-hover:border-blue-600">
@@ -100,8 +92,18 @@
                 </div>
 
                 <div>
-                    <label class="block text-xs font-bold text-[#1F3C88] uppercase tracking-wider mb-2 text-center">Runway Capacity (RWY)</label>
-                    <input type="number" name="rwy_capacity" value="31" class="w-full border-2 border-[#1F3C88] rounded-full px-4 py-3 text-center text-[#1F3C88] font-bold text-xl focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition">
+                    <label for="branchCodeInput" class="block text-sm font-bold text-[#1F3C88] mb-2 text-left">Cabang / Branch</label>
+                    <div class="relative">
+                        <select name="branch_code" id="branchCodeInput" class="w-full appearance-none bg-slate-50 border-2 border-slate-200 text-[#1F3C88] font-semibold py-3 px-4 pr-8 rounded-xl leading-tight focus:outline-none focus:bg-white focus:border-blue-500 transition cursor-pointer" required>
+                            <option value="" disabled selected>-- Pilih Cabang --</option>
+                            @foreach($cabangs as $cabang)
+                                <option value="{{ $cabang->kode_cabang }}">{{ $cabang->kode_cabang }} - {{ $cabang->nama }}</option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-[#1F3C88]">
+                            <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                        </div>
+                    </div>
                 </div>
 
                 <button type="button" onclick="startProcess()" id="btn-submit" class="w-full bg-[#1F3C88] hover:bg-blue-800 text-white font-bold py-4 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2 text-lg">
@@ -119,6 +121,33 @@
             </div>
         </div>
     </main>
+
+    <div id="capacityModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-slate-100">
+                    <div class="bg-white px-6 pb-6 pt-6">
+                        <div class="text-center mb-6">
+                            <h3 class="text-xl font-bold text-[#1F3C88]">Atur Kapasitas Runway</h3>
+                            <p id="cap-month-name" class="text-sm font-semibold text-slate-500 mt-1 bg-slate-100 inline-block px-3 py-1 rounded-full">Periode: -</p>
+                        </div>
+                        
+                        <div id="capacityRowsContainer" class="space-y-3"></div>
+
+                        <button type="button" onclick="addCapacityRow()" class="mt-4 w-full border-2 border-dashed border-[#1F3C88] text-[#1F3C88] font-bold py-2 rounded-xl hover:bg-blue-50 transition flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                            Tambah Periode
+                        </button>
+                    </div>
+                    <div class="bg-slate-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
+                        <button type="button" onclick="submitCapacity()" class="inline-flex w-full justify-center rounded-lg bg-[#1F3C88] px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-blue-800 sm:ml-3 sm:w-auto transition">Lanjut Process</button>
+                        <button type="button" onclick="closeCapacityModal()" class="mt-3 inline-flex w-full justify-center rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 hover:bg-slate-50 sm:mt-0 sm:w-auto transition">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="sheetModal" class="fixed inset-0 z-[100] hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
         <div class="fixed inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"></div>
@@ -208,12 +237,17 @@
     </div>
 
     <script>
+        let globalExists = false;
+        let globalMessage = "";
+        let maxDaysInMonth = 31;
+
         function handleFileSelect(input) {
             document.getElementById('file-name').innerText = input.files[0].name;
-            document.getElementById('selectedSheetInput').value = ''; 
+            document.getElementById('selectedSheetInput').value = '';
             document.getElementById('manualMonthInput').value = '';
             document.getElementById('manualYearInput').value = '';
-            hideError(); 
+            document.getElementById('capacityDataInput').value = '';
+            hideError();
         }
 
         function showError(message) {
@@ -229,6 +263,7 @@
             document.getElementById('selectedSheetInput').value = '';
             document.getElementById('manualMonthInput').value = '';
             document.getElementById('manualYearInput').value = '';
+            document.getElementById('capacityDataInput').value = '';
         }
 
         function hideError() {
@@ -237,12 +272,18 @@
 
         function startProcess() {
             const fileInput = document.getElementById('dropzone-file');
-            if (fileInput.files.length === 0) { 
+            if (fileInput.files.length === 0) {
                 showError("Mohon pilih file Excel terlebih dahulu.");
-                return; 
+                return;
             }
 
-            hideError(); 
+            const branchInput = document.getElementById('branchCodeInput');
+            if (!branchInput.value) {
+                showError("Mohon pilih Cabang / Branch terlebih dahulu.");
+                return;
+            }
+
+            hideError();
             setLoading(true);
 
             let formData = new FormData();
@@ -250,6 +291,7 @@
             formData.append('sheet_name', document.getElementById('selectedSheetInput').value);
             formData.append('manual_month', document.getElementById('manualMonthInput').value);
             formData.append('manual_year', document.getElementById('manualYearInput').value);
+            formData.append('branch_code', branchInput.value);
             formData.append('_token', '{{ csrf_token() }}');
 
             fetch('{{ route("upload.check") }}', {
@@ -262,21 +304,19 @@
 
                 if (data.status === 'multiple_sheets') {
                     showSheetModal(data.sheets);
-                } 
+                }
                 else if (data.status === 'invalid_format') {
-                    showError(data.message); 
-                    resetFileInput(); 
+                    showError(data.message);
+                    resetFileInput();
                 }
                 else if (data.status === 'missing_date') {
                     document.getElementById('dateModal').classList.remove('hidden');
                 }
                 else if (data.status === 'success') {
-                    if (data.exists) {
-                        document.getElementById('modal-message').innerText = data.message + " Apakah Anda ingin menimpa data lama?";
-                        document.getElementById('warningModal').classList.remove('hidden');
-                    } else {
-                        document.getElementById('uploadForm').submit();
-                    }
+                    globalExists = data.exists;
+                    globalMessage = data.message;
+                    
+                    openCapacityModal(data.bulan_nama, data.days_in_month);
                 } else {
                     showError('Error: ' + (data.error || 'Unknown error'));
                 }
@@ -304,9 +344,175 @@
             }
         }
 
+        function openCapacityModal(bulanNama, maxDays) {
+            maxDaysInMonth = maxDays;
+            document.getElementById('cap-month-name').innerText = "Periode: " + bulanNama;
+            
+            const container = document.getElementById('capacityRowsContainer');
+            container.innerHTML = '';
+            
+            addCapacityRow(1, maxDaysInMonth, 31);
+            
+            document.getElementById('capacityModal').classList.remove('hidden');
+        }
+
+        function addCapacityRow(startVal, endVal, capVal) {
+            const container = document.getElementById('capacityRowsContainer');
+            const rows = container.children;
+            const isFirstRow = rows.length === 0;
+
+            let start = startVal;
+            let end = endVal;
+            let cap = capVal || 31;
+
+            if (!isFirstRow && start === undefined) {
+                const lastEndInput = rows[rows.length - 1].querySelector('.cap-end');
+                const lastEndVal = parseInt(lastEndInput.value) || 0;
+                start = lastEndVal < maxDaysInMonth ? lastEndVal + 1 : maxDaysInMonth;
+            } else if (start === undefined) {
+                start = 1;
+            }
+
+            if (end === undefined) {
+                end = maxDaysInMonth;
+            }
+
+            const rowId = 'cap-row-' + Date.now();
+            
+            const rowHtml = `
+                <div id="${rowId}" class="flex items-center gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 relative group">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Kapasitas</label>
+                        <input type="number" class="cap-val w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-sm font-bold text-[#1F3C88]" value="${cap}" min="1">
+                    </div>
+                    <div class="w-16">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">Tgl</label>
+                        <input type="number" oninput="syncPreviousRow(this)" class="cap-start w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center" value="${start}" min="1" max="${maxDaysInMonth}">
+                    </div>
+                    <div class="text-slate-400 font-bold mt-4">-</div>
+                    <div class="w-16">
+                        <label class="block text-[10px] font-bold text-slate-500 uppercase">s/d</label>
+                        <input type="number" oninput="syncNextRow(this)" class="cap-end w-full bg-white border border-slate-300 rounded-md px-2 py-1.5 text-sm text-center" value="${end}" min="1" max="${maxDaysInMonth}">
+                    </div>
+                    
+                    ${!isFirstRow ? `
+                    <button type="button" onclick="removeCapacityRow('${rowId}')" class="mt-4 w-8 h-8 shrink-0 flex items-center justify-center text-red-500 bg-red-50 hover:bg-red-100 hover:text-red-700 rounded-md transition" title="Hapus Baris">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    </button>
+                    ` : `
+                    <div class="w-8 shrink-0"></div>
+                    `}
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        function syncNextRow(inputElement) {
+            const currentRow = inputElement.closest('.group');
+            const container = document.getElementById('capacityRowsContainer');
+            const rows = Array.from(container.children);
+            
+            const currentIndex = rows.indexOf(currentRow);
+            
+            if (currentIndex !== -1 && currentIndex < rows.length - 1) {
+                const nextRow = rows[currentIndex + 1];
+                const currentEndValue = parseInt(inputElement.value) || 0;
+                
+                const nextStartInput = nextRow.querySelector('.cap-start');
+                
+                let nextStartValue = currentEndValue + 1;
+                if (nextStartValue > maxDaysInMonth) nextStartValue = maxDaysInMonth;
+                
+                nextStartInput.value = nextStartValue;
+            }
+        }
+
+        function syncPreviousRow(inputElement) {
+            const currentRow = inputElement.closest('.group');
+            const container = document.getElementById('capacityRowsContainer');
+            const rows = Array.from(container.children);
+            
+            const currentIndex = rows.indexOf(currentRow);
+            
+            if (currentIndex > 0) {
+                const prevRow = rows[currentIndex - 1];
+                const currentStartValue = parseInt(inputElement.value) || 2;
+                
+                const prevEndInput = prevRow.querySelector('.cap-end');
+                
+                let prevEndValue = currentStartValue - 1;
+                
+                if (prevEndValue < 1) prevEndValue = 1;
+                
+                prevEndInput.value = prevEndValue;
+            }
+        }
+
+        function removeCapacityRow(rowId) {
+            const rowToRemove = document.getElementById(rowId);
+            if (rowToRemove) {
+                rowToRemove.remove();
+            }
+
+            const container = document.getElementById('capacityRowsContainer');
+            const remainingRows = container.children;
+
+            if (remainingRows.length > 0) {
+                remainingRows[0].querySelector('.cap-start').value = 1;
+                for (let i = 1; i < remainingRows.length; i++) {
+                    const prevEnd = parseInt(remainingRows[i-1].querySelector('.cap-end').value) || 0;
+                    const currentStartInput = remainingRows[i].querySelector('.cap-start');
+                    
+                    let newStart = prevEnd + 1;
+                    if (newStart > maxDaysInMonth) newStart = maxDaysInMonth;
+                    
+                    currentStartInput.value = newStart;
+                }
+
+                const lastRow = remainingRows[remainingRows.length - 1];
+                lastRow.querySelector('.cap-end').value = maxDaysInMonth;
+            }
+        }
+
+        function closeCapacityModal() {
+            document.getElementById('capacityModal').classList.add('hidden');
+            resetFileInput();
+        }
+
+        function submitCapacity() {
+            const container = document.getElementById('capacityRowsContainer');
+            const rows = container.children;
+            let capacityData = [];
+            
+            for (let i = 0; i < rows.length; i++) {
+                const cap = rows[i].querySelector('.cap-val').value;
+                const start = rows[i].querySelector('.cap-start').value;
+                const end = rows[i].querySelector('.cap-end').value;
+                
+                if (cap && start && end) {
+                    capacityData.push({ capacity: cap, start: start, end: end });
+                }
+            }
+            
+            if (capacityData.length === 0) {
+                alert("Harap masukkan minimal 1 data kapasitas!");
+                return;
+            }
+
+            document.getElementById('capacityDataInput').value = JSON.stringify(capacityData);
+            document.getElementById('capacityModal').classList.add('hidden');
+
+            if (globalExists) {
+                document.getElementById('modal-message').innerText = globalMessage + " Apakah Anda ingin menimpa data lama?";
+                document.getElementById('warningModal').classList.remove('hidden');
+            } else {
+                document.getElementById('uploadForm').submit();
+            }
+        }
+
         function showSheetModal(sheets) {
             const container = document.getElementById('sheetListContainer');
-            container.innerHTML = ''; 
+            container.innerHTML = '';
             sheets.forEach(sheetName => {
                 let btn = document.createElement('button');
                 btn.className = "w-full text-left px-4 py-3 rounded-lg border border-slate-200 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700 transition flex items-center gap-3";

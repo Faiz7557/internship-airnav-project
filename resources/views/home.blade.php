@@ -17,7 +17,7 @@
 
         @keyframes scroll-cards {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } 
+            100% { transform: translateX(-50%); }
         }
 
         .animate-scroll {
@@ -33,9 +33,9 @@
 <body class="bg-white m-0 p-0 overflow-x-hidden relative overflow-y-scroll">
     <nav class="absolute top-0 inset-x-0 px-6 md:px-12 py-6 flex justify-between items-center z-50">
         <div class="flex items-center gap-3">
-            <img src="{{ asset('img/logo_airnav.png') }}" 
-                 alt="AirNav Logo" 
-                 class="h-10 md:h-12 object-contain"> 
+            <img src="{{ asset('img/logo_airnav.png') }}"
+                 alt="AirNav Logo"
+                 class="h-10 md:h-12 object-contain">
             
             <span class="text-white font-bold text-xl hidden md:block drop-shadow-md tracking-wide">
                 AirNav Indonesia
@@ -92,14 +92,51 @@
 
     <section class="w-full bg-white rounded-t-[3rem] -mt-24 relative z-10 px-6 md:px-12 py-14">
         <div class="max-w-7xl mx-auto">
-            <div class="flex items-center justify-between mb-10">
+            <div class="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
                 <div>
-                    <h2 class="text-3xl font-bold text-[#1F3C88]">Penerbangan {{ $nama_bulan }}</h2>
+                    <h2 class="text-3xl font-bold text-[#1F3C88]">Penerbangan {{ $nama_bulan }} - {{ $selectedCabang }}</h2>
                     <p class="text-slate-400 mt-1">Ringkasan statistik berdasarkan data bulan terakhir.</p>
                 </div>
-                <button class="text-sm font-semibold text-[#1F3C88] hover:underline transition">
-                    Lihat Analisis Lengkap →
-                </button>
+                
+                <div class="flex items-center gap-4">
+                    
+                    @php
+                        $activeCabang = $cabangs->where('kode_cabang', $selectedCabang)->first();
+                        $activeNama = $activeCabang ? $activeCabang->nama : 'Cabang';
+                    @endphp
+                    <div class="relative" id="customDropdownContainer">
+                        <button type="button" onclick="toggleCustomDropdown()" class="flex items-center justify-between gap-3 w-full sm:w-auto bg-white border-2 border-blue-100 text-[#1F3C88] text-sm font-bold rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 py-2.5 pl-4 pr-3 shadow-sm hover:border-blue-300 hover:shadow-md transition-all outline-none">
+                            <div class="flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 110 2h-3a1 1 0 01-1-1v-2a1 1 0 00-1-1H9a1 1 0 00-1 1v2a1 1 0 01-1 1H4a1 1 0 110-2V4zm3 1h2v2H7V5zm2 4H7v2h2V9zm2-4h2v2h-2V5zm2 4h-2v2h2V9z" clip-rule="evenodd" />
+                                </svg>
+                                <span>{{ $selectedCabang }} - {{ $activeNama }}</span>
+                            </div>
+                            <svg class="h-4 w-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+
+                        <div id="customDropdownMenu" class="hidden absolute right-0 mt-2 w-60 origin-top-right rounded-xl bg-white shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none z-50 overflow-hidden transform opacity-0 scale-95 transition-all duration-200">
+                            <div class="py-1">
+                                @foreach($cabangs as $cabang)
+                                    <button type="button" onclick="window.location.href='?kode_cabang={{ $cabang->kode_cabang }}'" class="w-full text-left flex items-center px-4 py-2.5 text-sm font-semibold transition-colors {{ $selectedCabang == $cabang->kode_cabang ? 'bg-blue-50 text-[#1F3C88] border-l-4 border-[#1F3C88]' : 'text-slate-600 hover:bg-slate-50 hover:text-[#1F3C88] border-l-4 border-transparent' }}">
+                                        {{ $cabang->kode_cabang }} - {{ $cabang->nama }}
+                                    </button>
+                                @endforeach
+                                
+                                <div class="border-t border-slate-100 my-1"></div>
+                                
+                                <button type="button" onclick="openManageCabang()" class="w-full text-left flex items-center gap-2 px-4 py-3 text-sm font-extrabold text-blue-600 hover:bg-blue-50 transition-colors">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd" /></svg>
+                                    Edit Data Cabang...
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('summary') }}?branch_code={{ $selectedCabang }}" class="text-sm font-semibold text-[#1F3C88] hover:underline transition whitespace-nowrap">
+                        Lihat Analisis Lengkap →
+                    </a>
+                </div>
             </div>
 
             <div class="overflow-hidden w-full py-4">
@@ -205,6 +242,118 @@
         </div>
     </section>
 
+    <div id="cabangModal" class="hidden fixed inset-0 z-[100] bg-gray-900/60 backdrop-blur-sm overflow-y-auto flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="text-lg font-bold text-[#1F3C88] flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    Kelola Database Cabang
+                </h3>
+                <button onclick="closeCabangModal()" class="text-slate-400 hover:text-red-500 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1">
+                
+                @if(session('success'))
+                    <div class="mb-4 p-3 bg-green-50 text-green-700 rounded-lg text-sm font-medium border border-green-100">✅ {{ session('success') }}</div>
+                @endif
+                @if($errors->any())
+                    <div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm font-medium border border-red-100">❌ {{ $errors->first() }}</div>
+                @endif
+
+                <div class="mb-6 bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                    <h4 class="text-xs font-bold text-blue-800 uppercase mb-3">➕ Tambah Cabang Baru</h4>
+                    <form action="{{ route('cabang.store') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
+                        @csrf
+                        <input type="text" name="kode_cabang" placeholder="Kode ICAO (Cth: WADD)" required class="w-full sm:w-1/3 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                        <input type="text" name="nama" placeholder="Nama Kota (Cth: Bali)" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <button type="submit" class="bg-[#1F3C88] hover:bg-blue-800 text-white font-semibold rounded-lg px-5 py-2 text-sm transition shrink-0 shadow-sm">Simpan</button>
+                    </form>
+                </div>
+
+                <h4 class="text-xs font-bold text-slate-500 uppercase mb-3">✏️ Edit Cabang Tersedia</h4>
+                <div class="space-y-3">
+                    @foreach($cabangs as $cabang)
+                        <form action="{{ route('cabang.update', $cabang->id) }}" method="POST" class="flex flex-col sm:flex-row items-center gap-3 bg-white p-3 rounded-xl border border-slate-200 hover:border-blue-300 transition-colors shadow-sm group">
+                            @csrf
+                            @method('PUT')
+                            <div class="w-full sm:w-1/3 relative">
+                                <label class="text-[10px] text-slate-400 font-bold absolute -top-2 left-2 bg-white px-1">ICAO</label>
+                                <input type="text" name="kode_cabang" value="{{ $cabang->kode_cabang }}" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm font-bold text-[#1F3C88] uppercase focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <div class="w-full relative">
+                                <label class="text-[10px] text-slate-400 font-bold absolute -top-2 left-2 bg-white px-1">Nama Kota</label>
+                                <input type="text" name="nama" value="{{ $cabang->nama }}" required class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            </div>
+                            <button type="submit" class="w-full sm:w-auto bg-green-50 text-green-700 hover:bg-green-600 hover:text-white border border-green-200 font-semibold rounded-lg px-4 py-2 text-sm transition shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100">Update</button>
+                        </form>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleCustomDropdown() {
+            const menu = document.getElementById('customDropdownMenu');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                setTimeout(() => {
+                    menu.classList.remove('opacity-0', 'scale-95');
+                    menu.classList.add('opacity-100', 'scale-100');
+                }, 10);
+            } else {
+                menu.classList.remove('opacity-100', 'scale-100');
+                menu.classList.add('opacity-0', 'scale-95');
+                setTimeout(() => menu.classList.add('hidden'), 200);
+            }
+        }
+
+        function openManageCabang() {
+            const menu = document.getElementById('customDropdownMenu');
+            menu.classList.remove('opacity-100', 'scale-100');
+            menu.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => menu.classList.add('hidden'), 200);
+            
+            document.getElementById('cabangModal').classList.remove('hidden');
+        }
+
+        function closeCabangModal() {
+            document.getElementById('cabangModal').classList.add('hidden');
+        }
+
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('customDropdownContainer');
+            const menu = document.getElementById('customDropdownMenu');
+            if (dropdown && !dropdown.contains(event.target)) {
+                if (!menu.classList.contains('hidden')) {
+                    menu.classList.remove('opacity-100', 'scale-100');
+                    menu.classList.add('opacity-0', 'scale-95');
+                    setTimeout(() => menu.classList.add('hidden'), 200);
+                }
+            }
+        });
+
+        @if(session('success') || $errors->any())
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('cabangModal').classList.remove('hidden');
+            });
+        @endif
+
+        function closeCabangModal() {
+            document.getElementById('cabangModal').classList.add('hidden');
+        }
+
+        @if(session('success') || $errors->any())
+            document.addEventListener('DOMContentLoaded', function() {
+                document.getElementById('cabangModal').classList.remove('hidden');
+            });
+        @endif
+    </script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const slide1 = document.getElementById('slide-1');
@@ -220,7 +369,7 @@
                     slide1.classList.replace('opacity-0', 'opacity-100');
                     active = 1;
                 }
-            }, 5000); 
+            }, 5000);
         });
     </script>
 </body>
