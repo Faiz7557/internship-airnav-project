@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Exception;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Models\Cabang;
+use App\Models\RawFlightData;
 
 class UploadController extends Controller
 {
@@ -127,7 +128,7 @@ class UploadController extends Controller
             
             $manualMonth = $request->input('manual_month');
             $manualYear = $request->input('manual_year');
-            $branchCode = $request->input('branch_code'); // Mengambil kode cabang
+            $branchCode = $request->input('branch_code');
             $capacities = json_decode($request->input('capacity_data'), true);
 
             $reader = IOFactory::createReaderForFile($filePath);
@@ -171,6 +172,7 @@ class UploadController extends Controller
 
                 $currentDate = Carbon::createFromDate($tahun, $bulan, $day)->format('Y-m-d');
                 $maxMovement = 0; $peakHourLabel = '00:00';
+                $rawHourlyData = [];
 
                 for ($r = $idx_start_hour; $r <= $idx_end_hour; $r++) {
                     $val = (int) ($rawArray[$r][$colIndex] ?? 0);
@@ -179,6 +181,9 @@ class UploadController extends Controller
                         $rawLabel = (string)$rawArray[$r][0];
                         $peakHourLabel = str_replace('.', ':', substr($rawLabel, 0, 5));
                     }
+
+                    $hourIndex = str_pad($r - $idx_start_hour, 2, '0', STR_PAD_LEFT);
+                    $rawHourlyData['h' . $hourIndex] = $val;
                 }
                 
                 $domArr = (int) ($rawArray[$idx_dom_arr][$colIndex] ?? 0);
@@ -211,6 +216,11 @@ class UploadController extends Controller
                         'peak_hour' => $peakHourLabel, 'peak_hour_count' => $maxMovement,
                         'runway_capacity' => $currentCapacity
                     ]
+                );
+
+                RawFlightData::updateOrCreate(
+                    ['date' => $currentDate, 'kode_cabang' => $branchCode],
+                    $rawHourlyData
                 );
             }
 

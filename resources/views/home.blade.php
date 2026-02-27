@@ -17,7 +17,7 @@
 
         @keyframes scroll-cards {
             0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); } 
+            100% { transform: translateX(-50%); }
         }
 
         .animate-scroll {
@@ -33,9 +33,9 @@
 <body class="bg-white m-0 p-0 overflow-x-hidden relative overflow-y-scroll">
     <nav class="absolute top-0 inset-x-0 px-6 md:px-12 py-6 flex justify-between items-center z-50">
         <div class="flex items-center gap-3">
-            <img src="{{ asset('img/logo_airnav.png') }}" 
-                 alt="AirNav Logo" 
-                 class="h-10 md:h-12 object-contain"> 
+            <img src="{{ asset('img/logo_airnav.png') }}"
+                 alt="AirNav Logo"
+                 class="h-10 md:h-12 object-contain">
             
             <span class="text-white font-bold text-xl hidden md:block drop-shadow-md tracking-wide">
                 AirNav Indonesia
@@ -297,7 +297,6 @@
     </div>
 
     <script>
-        // Fungsi membuka/menutup dropdown custom dengan animasi
         function toggleCustomDropdown() {
             const menu = document.getElementById('customDropdownMenu');
             if (menu.classList.contains('hidden')) {
@@ -313,7 +312,6 @@
             }
         }
 
-        // Fungsi membuka modal dari custom dropdown
         function openManageCabang() {
             const menu = document.getElementById('customDropdownMenu');
             menu.classList.remove('opacity-100', 'scale-100');
@@ -323,12 +321,10 @@
             document.getElementById('cabangModal').classList.remove('hidden');
         }
 
-        // Fungsi menutup modal
         function closeCabangModal() {
             document.getElementById('cabangModal').classList.add('hidden');
         }
 
-        // Menutup dropdown secara otomatis jika user klik di sembarang tempat
         document.addEventListener('click', function(event) {
             const dropdown = document.getElementById('customDropdownContainer');
             const menu = document.getElementById('customDropdownMenu');
@@ -341,7 +337,6 @@
             }
         });
 
-        // Buka modal otomatis jika ada error/success setelah submit form
         @if(session('success') || $errors->any())
             document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('cabangModal').classList.remove('hidden');

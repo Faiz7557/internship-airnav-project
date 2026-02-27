@@ -10,12 +10,22 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
-    <style> 
-        body { font-family: 'Poppins', sans-serif; } 
-        .animate-fade-in-up { animation: fadeInUp 0.5s ease-out; }
+    <style>
+        body {
+            font-family:'Poppins', sans-serif;
+        }
+
+        .animate-fade-in-up {
+            animation: fadeInUp 0.5s ease-out;
+        }
+
         @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0; transform: translateY(10px);
+            }
+            to {
+                opacity: 1; transform: translateY(0);
+            }
         }
     </style>
 </head>
@@ -757,4 +767,3 @@
     </script>
 </body>
 </html>
-    
