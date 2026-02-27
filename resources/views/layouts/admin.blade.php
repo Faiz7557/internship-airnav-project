@@ -75,7 +75,7 @@
         <!-- Top Navigation -->
         <nav class="glass-nav text-white px-6 py-4 sticky top-0 z-50 flex justify-between items-center">
             <div class="flex items-center gap-4">
-                <img src="{{ asset('img/logo_airnav.png') }}" alt="Logo" class="h-9 brightness-0 invert opacity-90 hover:opacity-100 transition">
+                <img src="{{ asset('img/logo_airnav.png') }}" alt="Logo AirNav" class="h-9 brightness-0 invert opacity-90 hover:opacity-100 transition">
                 <div class="h-6 w-px bg-white/20 hidden md:block"></div>
                 <span class="font-outfit font-bold text-lg tracking-wide hidden md:inline text-blue-50">Admin Panel</span>
             </div>

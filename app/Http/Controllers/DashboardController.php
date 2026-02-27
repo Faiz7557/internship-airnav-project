@@ -10,21 +10,42 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(DashboardFilterRequest $request)
+    public function index(DashboardFilterRequest $request, \App\Services\DashboardService $dashboardService)
     {
         $query = DailyFlightStat::query();
 
         // Filter Logic
-        if ($request->filled('month') && $request->filled('year')) {
-            $month = $request->integer('month');
-            $year = $request->integer('year');
-            $query->whereMonth('date', $month)->whereYear('date', $year);
+        $isFiltered = false;
+        
+        $reqYear = $request->filled('year') ? $request->integer('year') : null;
+        $reqMonth = $request->filled('month') ? $request->integer('month') : null;
+
+        // Fallback: If only Month is selected without Year, safely default to the latest existing year.
+        if ($reqMonth && !$reqYear) {
+            $latestStat = DailyFlightStat::orderBy('date', 'desc')->first();
+            if ($latestStat) {
+                $reqYear = Carbon::parse($latestStat->date)->year;
+            } else {
+                $reqYear = Carbon::now()->year;
+            }
+        }
+
+        if ($reqYear) {
+            $year = $reqYear;
+            $query->whereYear('date', $year);
             $isFiltered = true;
-            $labelType = 'daily';
+            
+            if ($reqMonth) {
+                $month = $reqMonth;
+                $query->whereMonth('date', $month);
+                $labelType = 'daily';
+            } else {
+                $month = null;
+                $labelType = 'monthly'; // Force monthly mode for this specific year
+            }
         } else {
             $month = null;
             $year = null;
-            $isFiltered = false;
             $labelType = 'monthly';
         }
 
@@ -38,11 +59,11 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('year');
 
-        // Data Range for Visualization
-        $minDate = DailyFlightStat::min('date');
-        $maxDate = DailyFlightStat::max('date');
+        // Data Range for Visualization based on filtered data
+        $minDate = $dailyStats->min('date');
+        $maxDate = $dailyStats->max('date');
         $dataRange = $minDate && $maxDate 
-            ? Carbon::parse($minDate)->format('d M Y') . ' - ' . Carbon::parse($maxDate)->format('d M Y') 
+            ? Carbon::parse($minDate)->locale('id')->translatedFormat('d F Y') . ' hingga ' . Carbon::parse($maxDate)->locale('id')->translatedFormat('d F Y') 
             : '-';
 
         // --- PULL EVENTS FROM DATABASE ---
@@ -98,16 +119,22 @@ class DashboardController extends Controller
         ] : ['date' => '-', 'count' => 0];
 
         $highestPeakNode = $dailyStats->sortByDesc('peak_hour_count')->first();
-        $highestPeak = $highestPeakNode ? [
-            'time' => Carbon::parse($highestPeakNode->peak_hour)->format('H:i') . ' (' . Carbon::parse($highestPeakNode->date)->format('d/m') . ')',
-            'count' => $highestPeakNode->peak_hour_count
-        ] : ['time' => '-', 'count' => 0];
+        if ($highestPeakNode && $highestPeakNode->peak_hour) {
+            $carbonPeak = Carbon::parse($highestPeakNode->date . ' ' . $highestPeakNode->peak_hour)->addHours(7);
+            $highestPeak = [
+                'time' => $carbonPeak->format('H:i') . ' (' . $carbonPeak->format('d/m') . ')',
+                'date' => $carbonPeak->format('d M Y'), // Synchronized specific date
+                'count' => $highestPeakNode->peak_hour_count
+            ];
+        } else {
+            $highestPeak = ['time' => '-', 'date' => '-', 'count' => 0];
+        }
 
         // 2. Traffic Trend (Line Chart) & 6. Arr/Dep Split (Prepared here for sync)
         $monthlyArr = [];
         $monthlyDep = [];
         
-        if ($isFiltered) {
+        if ($isFiltered && $labelType === 'daily') {
             // Daily View
             $chartTrend = [
                 'labels' => $dailyStats->map(fn($d) => Carbon::parse($d->date)->format('d'))->values(),
@@ -204,7 +231,10 @@ class DashboardController extends Controller
         // 4. Peak Hour Distribution (Bar Chart)
         $peakHourfreq = [];
         foreach ($dailyStats as $stat) {
-            $hour = $stat->peak_hour ? substr($stat->peak_hour, 0, 5) : '00:00';
+            $hourInt = $stat->peak_hour ? (int)substr($stat->peak_hour, 0, 2) : 0;
+            $hourUTC7 = ($hourInt + 7) % 24;
+            $hour = sprintf('%02d:00', $hourUTC7);
+            
             if (!isset($peakHourfreq[$hour])) $peakHourfreq[$hour] = 0;
             $peakHourfreq[$hour]++;
         }
@@ -252,45 +282,20 @@ class DashboardController extends Controller
 
         // 8. Advanced Diagnostics
         
-        // a. Capacity Utilization (Avg Peak / Runway Capacity)
-        $avgPeakCount = $dailyStats->avg('peak_hour_count');
-        $avgCapacity = $dailyStats->avg('runway_capacity'); 
-        $capacityUtilization = ($avgCapacity > 0) ? round(($avgPeakCount / $avgCapacity) * 100, 1) : 0;
+        // a. Capacity Utilization (Avg Daily Flights / (Runway Capacity * 19 hours))
+        // Jam operasional Surabaya: 22.00 - 17.00 UTC = 19 Jam
+        $avgDailyTotal = $dailyStats->count() > 0 ? $totalFlights / $dailyStats->count() : 0;
+        $avgHourlyCapacity = $dailyStats->avg('runway_capacity') ?? 0;
+        $dailyCapacity = $avgHourlyCapacity * 19; 
+        $capacityUtilization = ($dailyCapacity > 0) ? round(($avgDailyTotal / $dailyCapacity) * 100, 1) : 0;
 
         // b. Growth Metrics (Current vs Previous)
         // ... (existing code)
 
         // 9. Hourly Profile Simulation (Drill-Down Data)
-        // Since we don't have raw hourly logs, we simulate based on typical airport profiles
-        // Weekday: Business peaks (Morning 06-09, Afternoon 16-18)
-        // Weekend: Leisure peaks (Mid-day 10-14)
-        
-        $hourlyProfiles = [];
-        for ($i = 1; $i <= 7; $i++) {
-            $dailyTotal = $dayOfWeekStats[$i] ?? 0;
-            $profile = [];
-            
-            // Define weights for each hour (00-23)
-            if ($i <= 5) { // Weekday (Mon-Fri)
-                $weights = [
-                    2, 1, 1, 1, 2, 8, 15, 20, 18, 12, 10, 10, 10, 11, 12, 16, 18, 15, 10, 8, 6, 4, 3, 2
-                ];
-            } else { // Weekend (Sat-Sun)
-                $weights = [
-                    2, 1, 1, 1, 1, 4, 8, 12, 15, 18, 20, 20, 19, 18, 16, 14, 12, 10, 8, 6, 5, 4, 3, 2
-                ];
-            }
-
-            // Normalize and distribute dailyTotal
-            $totalWeight = array_sum($weights);
-            foreach ($weights as $w) {
-                // Add some randomness +/- 10%
-                $noise = rand(90, 110) / 100; 
-                $val = ($dailyTotal * ($w / $totalWeight)) * $noise;
-                $profile[] = round($val);
-            }
-            $hourlyProfiles[$i] = $profile;
-        }
+        // Uses smart estimation logic from DashboardService to accurately shift profiles 
+        // to match the specific UTC+7 Peak Hour for each day of the week.
+        $hourlyProfiles = $dashboardService->generateHourlyProfiles($dailyStats);
 
         // b. Growth Metrics (Current vs Previous)
         $growthPercentage = 0;
@@ -298,13 +303,17 @@ class DashboardController extends Controller
         $activeTotal = $totalFlights; // Default to calculated total
 
         if ($isFiltered) {
-            // Compare Same Month Last Year
             $prevYear = $year - 1;
-            $prevMonthStats = DailyFlightStat::whereMonth('date', $month)->whereYear('date', $prevYear)->sum('total_flights');
-            $previousTotal = $prevMonthStats;
+            if ($month) {
+                // Compare Same Month Last Year
+                $previousTotal = DailyFlightStat::whereMonth('date', $month)->whereYear('date', $prevYear)->sum('total_flights');
+            } else {
+                // Compare Same Year Last Year
+                $previousTotal = DailyFlightStat::whereYear('date', $prevYear)->sum('total_flights');
+            }
         } else {
             // All Time View: Compare Latest Full Year vs Previous Year
-            $maxYearInDB = DailyFlightStat::max(DB::raw('YEAR(date)'));
+            $maxYearInDB = DailyFlightStat::max(DB::raw('YEAR(date)')) ?? Carbon::now()->year;
             $currYearTotal = DailyFlightStat::whereYear('date', $maxYearInDB)->sum('total_flights');
             $previousTotal = DailyFlightStat::whereYear('date', $maxYearInDB - 1)->sum('total_flights');
             
@@ -316,6 +325,8 @@ class DashboardController extends Controller
 
         if ($previousTotal > 0) {
             $growthPercentage = round((($activeTotal - $previousTotal) / $previousTotal) * 100, 1);
+        } else if ($activeTotal > 0) {
+            $growthPercentage = 100;
         }
 
         // c. Training Impact
@@ -324,14 +335,18 @@ class DashboardController extends Controller
 
         // 10. HEATMAP DATA (Full History for Client-Side Filtering)
         // Fetch all daily stats to allow dynamic year switching on frontend
-        $heatmapData = DailyFlightStat::select('date', 'total_flights', 'peak_hour_count')
+        $heatmapData = DailyFlightStat::select('date', 'total_flights', 'peak_hour_count', 'peak_hour', 'dom_arr', 'dom_dep', 'int_arr', 'int_dep', 'training_arr', 'training_dep')
             ->orderBy('date')
             ->get()
             ->map(function($item) {
                 return [
                     'date' => $item->date, // YYYY-MM-DD
                     'value' => $item->total_flights,
-                    'peak' => $item->peak_hour_count ?? 0,
+                    'peak_count' => $item->peak_hour_count ?? 0,
+                    'peak_hour' => $item->peak_hour ? (int)substr($item->peak_hour, 0, 2) : 0,
+                    'dom' => $item->dom_arr + $item->dom_dep,
+                    'int' => $item->int_arr + $item->int_dep,
+                    'training' => $item->training_arr + $item->training_dep,
                     'year' => Carbon::parse($item->date)->year, // Helper for JS filtering
                     'month' => Carbon::parse($item->date)->month // Helper for JS filtering
                 ];
@@ -372,17 +387,17 @@ class DashboardController extends Controller
         // A. Total Flights
         $totalCurrentYear = DailyFlightStat::whereYear('date', $targetYear)->sum('total_flights');
         $totalPrevYear    = DailyFlightStat::whereYear('date', $prevYear)->sum('total_flights');
-        $growthTotal      = ($totalPrevYear > 0) ? round((($totalCurrentYear - $totalPrevYear) / $totalPrevYear) * 100, 1) : 0;
+        $growthTotal      = ($totalPrevYear > 0) ? round((($totalCurrentYear - $totalPrevYear) / $totalPrevYear) * 100, 1) : ($totalCurrentYear > 0 ? 100 : 0);
 
         // B. Peak Day Traffic
         $peakDayCurrent = DailyFlightStat::whereYear('date', $targetYear)->max('total_flights') ?? 0;
         $peakDayPrev    = DailyFlightStat::whereYear('date', $prevYear)->max('total_flights') ?? 0;
-        $growthPeak     = ($peakDayPrev > 0) ? round((($peakDayCurrent - $peakDayPrev) / $peakDayPrev) * 100, 1) : 0;
+        $growthPeak     = ($peakDayPrev > 0) ? round((($peakDayCurrent - $peakDayPrev) / $peakDayPrev) * 100, 1) : ($peakDayCurrent > 0 ? 100 : 0);
 
         // C. Average Daily Flights
         $avgCurrent = DailyFlightStat::whereYear('date', $targetYear)->avg('total_flights') ?? 0;
         $avgPrev    = DailyFlightStat::whereYear('date', $prevYear)->avg('total_flights') ?? 0;
-        $growthAvg  = ($avgPrev > 0) ? round((($avgCurrent - $avgPrev) / $avgPrev) * 100, 1) : 0;
+        $growthAvg  = ($avgPrev > 0) ? round((($avgCurrent - $avgPrev) / $avgPrev) * 100, 1) : ($avgCurrent > 0 ? 100 : 0);
 
         // Bug 1 Fix: Calculate MoM Stats for comparison cards
         // Compare current month vs previous month (or same month last year if month is Jan)
@@ -399,13 +414,15 @@ class DashboardController extends Controller
 
             $momStats = [
                 'current_peak' => $currentPeak,
-                'peak_growth'  => $prevPeak > 0 ? round((($currentPeak - $prevPeak) / $prevPeak) * 100, 1) : 0,
+                'peak_growth'  => $prevPeak > 0 ? round((($currentPeak - $prevPeak) / $prevPeak) * 100, 1) : ($currentPeak > 0 ? 100 : 0),
                 'current_avg'  => $currentAvg,
-                'avg_growth'   => $prevAvg > 0 ? round((($currentAvg - $prevAvg) / $prevAvg) * 100, 1) : 0,
+                'avg_growth'   => $prevAvg > 0 ? round((($currentAvg - $prevAvg) / $prevAvg) * 100, 1) : ($currentAvg > 0 ? 100 : 0),
             ];
         } else {
-            // Unfiltered: compare latest month in DB vs previous month
-            $latestDate    = DailyFlightStat::max('date');
+            // Unfiltered or Year-Only: compare latest month in DB vs previous month
+            // If Year-only, grab the latest month in that specific year. If unfiltered, grab the absolute latest month.
+            $latestDate = $isFiltered ? DailyFlightStat::whereYear('date', $year)->max('date') : DailyFlightStat::max('date');
+            
             if ($latestDate) {
                 $latestCarbon   = Carbon::parse($latestDate);
                 $prevMonthDate  = $latestCarbon->copy()->subMonth();
@@ -421,9 +438,9 @@ class DashboardController extends Controller
 
                 $momStats = [
                     'current_peak' => $currentPeak,
-                    'peak_growth'  => $prevPeak > 0 ? round((($currentPeak - $prevPeak) / $prevPeak) * 100, 1) : 0,
+                    'peak_growth'  => $prevPeak > 0 ? round((($currentPeak - $prevPeak) / $prevPeak) * 100, 1) : ($currentPeak > 0 ? 100 : 0),
                     'current_avg'  => $currentAvg,
-                    'avg_growth'   => $prevAvg > 0 ? round((($currentAvg - $prevAvg) / $prevAvg) * 100, 1) : 0,
+                    'avg_growth'   => $prevAvg > 0 ? round((($currentAvg - $prevAvg) / $prevAvg) * 100, 1) : ($currentAvg > 0 ? 100 : 0),
                 ];
             }
         }

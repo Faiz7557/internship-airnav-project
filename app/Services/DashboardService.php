@@ -97,12 +97,16 @@ class DashboardService
                     'total_flights' => 0,
                     'peak_count' => 0,
                     'count' => 0,
-                    'peak_hour_sum' => 0
+                    'peak_hours' => []
                 ];
             }
             $dailyProfiles[$dayNum]['total_flights'] += $stat->total_flights;
             $dailyProfiles[$dayNum]['peak_count'] += $stat->peak_hour_count;
-            $dailyProfiles[$dayNum]['peak_hour_sum'] += (int)substr($stat->peak_hour, 0, 2);
+            
+            // Peak Hour berada dalam UTC 0 (sesuai request)
+            $hourInt = $stat->peak_hour ? (int)substr($stat->peak_hour, 0, 2) : 0;
+            $dailyProfiles[$dayNum]['peak_hours'][] = $hourInt;
+
             $dailyProfiles[$dayNum]['count']++;
         }
 
@@ -122,16 +126,20 @@ class DashboardService
 
         $hourlyProfiles = [];
         for ($i = 1; $i <= 7; $i++) {
-            $profileStats = $dailyProfiles[$i] ?? ['total_flights' => 0, 'peak_count' => 0, 'count' => 0, 'peak_hour_sum' => 0];
+            $profileStats = $dailyProfiles[$i] ?? ['total_flights' => 0, 'peak_count' => 0, 'count' => 0, 'peak_hours' => []];
             
             if ($profileStats['count'] == 0) {
                 $hourlyProfiles[$i] = array_fill(0, 24, 0);
                 continue;
             }
 
-            $avgTotal = $profileStats['total_flights'] / $profileStats['count'];
-            $avgPeakVal = $profileStats['peak_count'] / $profileStats['count'];
-            $avgPeakHour = round($profileStats['peak_hour_sum'] / $profileStats['count']);
+            $avgTotal = round($profileStats['total_flights'] / $profileStats['count']);
+            $avgPeakVal = round($profileStats['peak_count'] / $profileStats['count']);
+            
+            // Menggunakan Modus (Nilai yang paling sering muncul) untuk menghindari bug timezone wrap-around saat dirata-ratakan
+            $counts = array_count_values($profileStats['peak_hours']);
+            arsort($counts);
+            $avgPeakHour = key($counts);
 
             $baseProfile = ($i >= 6) ? $weekendProfile : $weekdayProfile;
             
@@ -146,14 +154,52 @@ class DashboardService
                 $shiftedProfile[$h] = $baseProfile[$sourceH];
             }
 
-            // Scale
-            $currentSum = array_sum($shiftedProfile);
-            $finalProfile = [];
-            foreach ($shiftedProfile as $h => $w) {
-                $val = ($w / $currentSum) * $avgTotal;
-                $finalProfile[$h] = round($val);
+            // Scale & Distribution mathematically logic fix
+            $finalProfile = array_fill(0, 24, 0);
+            $finalProfile[$avgPeakHour] = $avgPeakVal;
+            
+            $remainingTotal = $avgTotal - $avgPeakVal;
+            if ($remainingTotal < 0) {
+                $remainingTotal = 0;
+                $finalProfile[$avgPeakHour] = $avgTotal; // Clamping
             }
-            $finalProfile[$avgPeakHour] = round($avgPeakVal);
+            
+            $weightSumWithoutPeak = array_sum($shiftedProfile) - $shiftedProfile[$avgPeakHour];
+            
+            if ($weightSumWithoutPeak > 0 && $remainingTotal > 0) {
+                $accumulated = 0;
+                foreach ($shiftedProfile as $h => $w) {
+                    if ($h !== $avgPeakHour) {
+                        $val = round(($w / $weightSumWithoutPeak) * $remainingTotal);
+                        $finalProfile[$h] = $val;
+                        $accumulated += $val;
+                    }
+                }
+                
+                // Distribusi sisa pembulatan agar totalnya sama persis dengan $avgTotal
+                $diff = (int) ($remainingTotal - $accumulated);
+                if ($diff !== 0) {
+                    arsort($shiftedProfile);
+                    while ($diff !== 0) {
+                        $changed = false;
+                        foreach ($shiftedProfile as $h => $w) {
+                            if ($h !== $avgPeakHour) {
+                                if ($diff > 0) {
+                                    $finalProfile[$h]++;
+                                    $diff--;
+                                    $changed = true;
+                                } elseif ($diff < 0 && $finalProfile[$h] > 0) {
+                                    $finalProfile[$h]--;
+                                    $diff++;
+                                    $changed = true;
+                                }
+                                if ($diff === 0) break;
+                            }
+                        }
+                        if (!$changed) break; // Break jika tidak ada perubahan agar tidak infinite loop
+                    }
+                }
+            }
             $hourlyProfiles[$i] = $finalProfile;
         }
         return $hourlyProfiles;
@@ -175,6 +221,8 @@ class DashboardService
 
         if ($previousTotal > 0) {
             return round((($currentTotal - $previousTotal) / $previousTotal) * 100, 1);
+        } else if ($currentTotal > 0) {
+            return 100;
         }
         return 0;
     }
@@ -199,14 +247,7 @@ class DashboardService
             'count' => $highestPeakNode->peak_hour_count
         ] : ['time' => '-', 'count' => 0];
 
-        $totalTra = $dailyStats->sum(fn($d) => $d->training_arr + $d->training_dep);
-        $trainingImpact = ($totalFlights > 0) ? round(($totalTra / $totalFlights) * 100, 1) : 0;
-
-        $avgPeakCount = $dailyStats->avg('peak_hour_count');
-        $avgCapacity = $dailyStats->avg('runway_capacity'); 
-        $capacityUtilization = ($avgCapacity > 0) ? round(($avgPeakCount / $avgCapacity) * 100, 1) : 0;
-
-        return compact('avgDailyFlights', 'busiestDay', 'highestPeak', 'trainingImpact', 'capacityUtilization');
+        return compact('avgDailyFlights', 'busiestDay', 'highestPeak');
     }
 
     /**

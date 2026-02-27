@@ -93,7 +93,9 @@
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
                 <div class="bg-gradient-to-br from-white to-slate-50 p-2 rounded-xl shadow-md border border-slate-100">
-                    <img src="{{ asset('img/logo_airnav.png') }}" class="h-8">
+                    <a href="#" class="flex items-center gap-3">
+                        <img src="{{ asset('img/logo_airnav.png') }}" alt="Logo AirNav" class="h-8">
+                    </a>
                 </div>
                 <div class="hidden md:block">
                     <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">AirNav Analytics</h1>
@@ -120,7 +122,7 @@
                 @if(isset($isFiltered) && $isFiltered)
                     <span class="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" /></svg>
-                        Filter: {{ date('F', mktime(0, 0, 0, $month, 10)) }} {{ $year }}
+                        Filter: {{ $month ? date('F', mktime(0, 0, 0, $month, 10)) . ' ' : '' }}{{ $year }}
                     </span>
                 @endif
             </div>
@@ -131,7 +133,7 @@
                     <select name="month" class="appearance-none bg-transparent text-sm font-bold text-slate-600 focus:outline-none cursor-pointer hover:text-[#1F3C88] py-2 pl-4 pr-8 rounded-xl transition-colors">
                         <option value="">Bulan</option>
                         @foreach(range(1, 12) as $m)
-                            <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                            <option value="{{ $m }}" {{ $month == $m ? 'selected' : '' }}>
                                 {{ date('F', mktime(0, 0, 0, $m, 10)) }}
                             </option>
                         @endforeach
@@ -147,7 +149,7 @@
                     <select name="year" class="appearance-none bg-transparent text-sm font-bold text-slate-600 focus:outline-none cursor-pointer hover:text-[#1F3C88] py-2 pl-4 pr-8 rounded-xl transition-colors">
                         <option value="">Tahun</option>
                         @foreach($availableDates as $y => $dates)
-                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                            <option value="{{ $y }}" {{ $year == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endforeach
                     </select>
                     <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
@@ -194,7 +196,7 @@
                      </div>
                      <div class="flex flex-col text-right">
                         <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Tanggal</span>
-                        <span class="font-bold text-slate-500">{{ \Carbon\Carbon::parse($busiestDay['date'])->format('d M Y') }}</span>
+                        <span class="font-bold text-slate-500">{{ $highestPeak['date'] }}</span>
                      </div>
                 </div>
             </x-kpi-card>
@@ -213,7 +215,7 @@
                 <div class="mt-2">
                     <div class="flex justify-between items-end mb-1">
                         <span class="text-[10px] font-medium bg-slate-50 px-2 py-0.5 rounded text-slate-400 border border-slate-100">
-                            Peak Utilization
+                            Avg Daily Utilization (19h)
                         </span>
                         <span class="text-[10px] text-slate-400 font-medium">Batas: < 80%</span>
                     </div>
@@ -234,15 +236,15 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z" /></svg>
                 </x-slot>
 
-                <div class="mt-4 pt-3 border-t border-slate-100/50">
+                 <div class="mt-4 pt-3 border-t border-slate-100/50">
                     <div class="flex justify-between items-center group">
                          <div class="flex items-center gap-2">
                             <span class="text-xs text-slate-500 font-medium font-outfit uppercase tracking-wider">Traffic Latih</span>
                         </div>
                          <div class="flex items-center gap-2">
-                            <span class="font-bold text-purple-600 text-sm">{{ $trainingImpact }}%</span>
+                            <span class="font-bold text-slate-500 text-sm">{{ $trainingImpact }}%</span>
                             <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                <div class="bg-purple-500 h-1.5 rounded-full shadow-sm" style="width: {{ $trainingImpact }}%"></div>
+                                <div class="bg-purple-500 h-1.5 rounded-full shadow-sm" style="width: {{ min($trainingImpact, 100) }}%"></div>
                             </div>
                         </div>
                     </div>
@@ -283,15 +285,15 @@
                     <!-- Legend -->
                     <div class="mt-auto space-y-3 border-t border-slate-100/50 pt-4 relative z-10">
                         <div class="flex justify-between text-sm items-center group cursor-default">
-                            <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-[#1F3C88] rounded-full ring-2 ring-blue-50 group-hover:ring-blue-100 transition"></span> Domestik</span> 
+                            <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-[#10b981] rounded-full ring-2 ring-emerald-50 group-hover:ring-emerald-100 transition"></span> Domestik</span> 
                             <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['dom']) }}</span>
                         </div>
                         <div class="flex justify-between text-sm items-center group cursor-default">
-                            <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-[#FDBE33] rounded-full ring-2 ring-amber-50 group-hover:ring-amber-100 transition"></span> Internasional</span> 
+                            <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-[#f59e0b] rounded-full ring-2 ring-amber-50 group-hover:ring-amber-100 transition"></span> Internasional</span> 
                             <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['int']) }}</span>
                         </div>
                         <div class="flex justify-between text-sm items-center group cursor-default">
-                            <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-slate-300 rounded-full ring-2 ring-slate-50 group-hover:ring-slate-100 transition"></span> Training</span> 
+                            <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-purple-500 rounded-full ring-2 ring-purple-50 group-hover:ring-purple-100 transition"></span> Training</span> 
                             <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['training']) }}</span>
                         </div>
                     </div>
@@ -301,7 +303,7 @@
                 <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 h-full">
                     
                     <!-- Peak Hour Frequency -->
-                    <x-chart-card title="Jam Sibuk" chartId="peakChart" height="220px">
+                    <x-chart-card title="Jam Sibuk (UTC 0)" chartId="peakChart" height="220px">
                         <x-slot name="icon">
                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         </x-slot>
@@ -316,7 +318,7 @@
                     </x-chart-card>
 
                     <!-- Day of Week Pattern -->
-                    <x-chart-card title="Pola Mingguan" chartId="dayOfWeekChart" height="220px" subtitle="Rata-rata Penerbangan Harian">
+                    <x-chart-card title="Pola Mingguan" chartId="dayOfWeekChart" height="220px" subtitle="Rata-rata Penerbangan Harian (Zonawaktu: UTC 0)">
                         <x-slot name="icon">
                              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                         </x-slot>
@@ -353,7 +355,7 @@
 
                     <x-slot name="action">
                         <div class="flex items-center gap-2">
-                             <button type="button" onclick="document.getElementById('addEventModal').classList.remove('hidden');" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-full shadow-sm transition flex items-center gap-1">
+                             <button type="button" id="openAddEventBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-full shadow-sm transition flex items-center gap-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
                                 Event
                             </button>
@@ -418,42 +420,92 @@
             Pertumbuhan & Komparasi
         </h3>
 
-        <!-- Global Year & Compare Filters for KPIs -->
-        <div class="glass-card p-1 rounded-xl flex gap-1 border border-white/80 shadow-sm bg-white/50 backdrop-blur-md">
-            <div class="relative group">
-                <select id="globalYearSelect" class="appearance-none bg-transparent text-xs font-bold text-[#1F3C88] focus:outline-none cursor-pointer py-1.5 pl-3 pr-7 hover:text-blue-700 transition-colors">
-                    @foreach($availableDates as $y => $d)
-                        <option value="{{ $y }}" {{ ($year ?? 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                    @endforeach
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-blue-400 group-hover:text-blue-600 transition-colors">
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+        <!-- Global KPI Comparison Filters -->
+        <div class="glass-card p-1.5 rounded-2xl flex flex-wrap items-center gap-2 border border-white/80 shadow-sm bg-white/50 backdrop-blur-md">
+            
+            <!-- Periode Utama -->
+            <div class="flex items-center gap-1 bg-blue-50/80 rounded-xl px-2 py-1 border border-blue-100/50">
+                <span class="text-[10px] uppercase font-bold text-blue-800 mr-1 hidden sm:block">Periode 1</span>
+                <div class="relative group">
+                    <select id="kpiMonth1" class="appearance-none bg-transparent text-xs font-bold text-[#1F3C88] focus:outline-none cursor-pointer py-1 pl-2 pr-6 hover:text-blue-700 transition-colors">
+                        <option value="all">Semua Bulan</option>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-blue-400 group-hover:text-blue-600 transition-colors">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+                <div class="relative group">
+                    <select id="kpiYear1" class="appearance-none bg-transparent text-xs font-bold text-[#1F3C88] focus:outline-none cursor-pointer py-1 pl-2 pr-6 hover:text-blue-700 transition-colors">
+                        @foreach($availableDates as $y => $d)
+                            <option value="{{ $y }}" {{ ($year ?? 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-blue-400 group-hover:text-blue-600 transition-colors">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                 </div>
             </div>
-            <div class="w-px h-5 bg-slate-200/80 self-center"></div>
-            <div class="relative group">
-                <select id="globalCompareSelect" class="appearance-none bg-transparent text-xs font-bold text-slate-500 focus:outline-none cursor-pointer py-1.5 pl-3 pr-7 hover:text-indigo-600 transition-colors">
-                    <option value="">vs Year</option>
-                    @foreach($availableDates as $y => $d)
-                        @if($y != ($year ?? 2026))
+
+            <div class="text-[10px] font-extrabold text-slate-400 italic px-1">VS</div>
+
+            <!-- Periode Pembanding (Periode 2) -->
+            <div class="flex items-center gap-1 bg-slate-50/80 rounded-xl px-2 py-1 border border-slate-200/50">
+                <span class="text-[10px] uppercase font-bold text-slate-500 mr-1 hidden sm:block">Periode 2</span>
+                <div class="relative group">
+                    <select id="kpiMonth2" class="appearance-none bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer py-1 pl-2 pr-6 hover:text-indigo-600 transition-colors">
+                        <option value="all">Semua Bulan</option>
+                        <option value="1">Januari</option>
+                        <option value="2">Februari</option>
+                        <option value="3">Maret</option>
+                        <option value="4">April</option>
+                        <option value="5">Mei</option>
+                        <option value="6">Juni</option>
+                        <option value="7">Juli</option>
+                        <option value="8">Agustus</option>
+                        <option value="9">September</option>
+                        <option value="10">Oktober</option>
+                        <option value="11">November</option>
+                        <option value="12">Desember</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400 group-hover:text-indigo-400 transition-colors">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+                <div class="relative group">
+                    <select id="kpiYear2" class="appearance-none bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer py-1 pl-2 pr-6 hover:text-indigo-600 transition-colors">
+                        <option value="">- Tahun -</option>
+                        @foreach($availableDates as $y => $d)
                             <option value="{{ $y }}">{{ $y }}</option>
-                        @endif
-                    @endforeach
-                </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-slate-400 group-hover:text-indigo-400 transition-colors">
-                    <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-slate-400 group-hover:text-indigo-400 transition-colors">
+                        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
                 </div>
             </div>
+            
         </div>
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-10 animate-enter" style="animation-delay: 0.5s">
-        <!-- Card 1: Total Flights Growth (YTD) -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 animate-enter" style="animation-delay: 0.5s">
+        <!-- Card 1: Total Flights Growth -->
         <x-kpi-card 
-            title="Total Penerbangan (YTD)" 
-            value="{{ number_format($totalCurrentYear ?? 0) }}" 
+            title="Total Penerbangan" 
+            value="0" 
             iconBg="bg-blue-50" iconColor="text-blue-600"
-            growth="{{ $growthTotal ?? 0 }}"
-            growthText="vs {{ $prevYear ?? 'Prev' }}"
+            growth="0"
+            growthText="vs -"
             class="border border-white/60"
             idVal="kpiTotalVal" idIcon="kpiTotalGrowthIcon" idText="kpiTotalGrowthText" idContainer="kpiTotalGrowthContainer" idVs="kpiTotalVs"
         >
@@ -462,28 +514,13 @@
             </x-slot>
         </x-kpi-card>
 
-        <!-- Card 2: Peak Day Traffic (YTD) -->
+        <!-- Card 2: Avg Daily Traffic -->
         <x-kpi-card 
-            title="Puncak (YTD)" 
-            value="{{ number_format($peakDayCurrent ?? 0) }}" 
-            iconBg="bg-amber-50" iconColor="text-amber-600"
-            growth="{{ $growthPeak ?? 0 }}"
-            growthText="vs {{ $prevYear ?? 'Prev' }}"
-             class="border border-white/60"
-            idVal="kpiPeakVal" idIcon="kpiPeakGrowthIcon" idText="kpiPeakGrowthText" idContainer="kpiPeakGrowthContainer" idVs="kpiPeakVs"
-        >
-             <x-slot name="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
-            </x-slot>
-        </x-kpi-card>
-
-        <!-- Card 3: Avg Daily Traffic (YTD) -->
-        <x-kpi-card 
-            title="Avg Harian (YTD)" 
-            value="{{ number_format($avgCurrent ?? 0) }}" 
-            iconBg="bg-purple-50" iconColor="text-purple-600"
-            growth="{{ $growthAvg ?? 0 }}"
-            growthText="vs {{ $prevYear ?? 'Prev' }}"
+            title="Rata-rata/Hari" 
+            value="0" 
+            iconBg="bg-indigo-50" iconColor="text-indigo-600"
+            growth="0"
+            growthText="vs -"
              class="border border-white/60"
             idVal="kpiAvgVal" idIcon="kpiAvgGrowthIcon" idText="kpiAvgGrowthText" idContainer="kpiAvgGrowthContainer" idVs="kpiAvgVs"
         >
@@ -492,33 +529,33 @@
             </x-slot>
         </x-kpi-card>
 
-        <!-- Card 4: Peak Hour (MoM) -->
+        <!-- Card 3: Peak Day Traffic -->
         <x-kpi-card 
-            title="Peak Jam (MoM)" 
-            value="{{ number_format($momStats['current_peak'] ?? 0) }}" 
-            iconBg="bg-cyan-50" iconColor="text-cyan-600"
-            growth="{{ $momStats['peak_growth'] ?? 0 }}"
-            growthText="vs Last Month"
-            class="border border-white/60"
-            idVal="kpiMomPeakVal" idIcon="kpiMomPeakGrowthIcon" idText="kpiMomPeakGrowthText" idContainer="kpiMomPeakGrowthContainer" idVs="kpiMomPeakVs"
+            title="Puncak Harian" 
+            value="0" 
+            iconBg="bg-amber-50" iconColor="text-amber-600"
+            growth="0"
+            growthText="vs -"
+             class="border border-white/60"
+            idVal="kpiPeakVal" idIcon="kpiPeakGrowthIcon" idText="kpiPeakGrowthText" idContainer="kpiPeakGrowthContainer" idVs="kpiPeakVs"
         >
-            <x-slot name="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+             <x-slot name="icon">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
             </x-slot>
         </x-kpi-card>
 
-        <!-- Card 5: Avg Daily (MoM) -->
+        <!-- Card 4: Peak Hour -->
         <x-kpi-card 
-            title="Avg Harian (MoM)" 
-            value="{{ number_format($momStats['current_avg'] ?? 0) }}" 
-            iconBg="bg-teal-50" iconColor="text-teal-600"
-            growth="{{ $momStats['avg_growth'] ?? 0 }}"
-            growthText="vs Last Month"
+            title="Puncak Jam" 
+            value="0" 
+            iconBg="bg-rose-50" iconColor="text-rose-600"
+            growth="0"
+            growthText="vs -"
             class="border border-white/60"
-            idVal="kpiMomAvgVal" idIcon="kpiMomAvgGrowthIcon" idText="kpiMomAvgGrowthText" idContainer="kpiMomAvgGrowthContainer" idVs="kpiMomAvgVs"
+            idVal="kpiHourPeakVal" idIcon="kpiHourPeakGrowthIcon" idText="kpiHourPeakGrowthText" idContainer="kpiHourPeakGrowthContainer" idVs="kpiHourPeakVs"
         >
             <x-slot name="icon">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             </x-slot>
         </x-kpi-card>
     </div>
@@ -591,14 +628,14 @@
         <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0" id="modalBackdrop"></div>
         
         <!-- Modal Panel -->
-        <div class="absolute inset-0 z-10 flex items-center justify-center p-4">
+        <div id="modalWrapper" class="absolute inset-0 z-10 flex items-center justify-center p-4">
             <div class="bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl w-full max-w-4xl transform scale-95 opacity-0 transition-all duration-300 border border-white/60" id="modalPanel">
                 <!-- Decorative Glows -->
-                <div class="absolute top-0 right-0 w-64 h-64 bg-indigo-100/50 rounded-full blur-3xl -z-10 -mr-16 -mt-16 pointer-events-none"></div>
+                <div class="absolute top-0 right-0 w-64 h-64 bg-rose-100/50 rounded-full blur-3xl -z-10 -mr-16 -mt-16 pointer-events-none"></div>
                 
                 <div class="p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
                     <!-- Close Button -->
-                    <button id="closeModalBtn" onclick="closeModal()" class="absolute top-6 right-6 p-2 bg-slate-100/80 rounded-full text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors z-20">
+                    <button id="closeModalBtn" class="absolute top-6 right-6 p-2 bg-slate-100/80 rounded-full text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors z-20">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                     </button>
                     
@@ -606,12 +643,16 @@
                     <div class="mb-6 flex items-start justify-between pr-10">
                         <div>
                             <h2 class="text-2xl font-bold text-[#1F3C88] font-outfit flex items-center gap-2">
-                                <span class="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                                <span class="p-2 bg-rose-50 rounded-lg text-rose-600">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                 </span>
-                                Profil Jam Sibuk: <span id="modalDayName" class="text-indigo-600">-</span>
+                                Profil Jam Sibuk: <span id="modalDayName" class="text-rose-600">-</span> <span class="text-sm font-medium text-slate-500 ml-2">(UTC 0)</span>
                             </h2>
-                            <p class="text-slate-500 text-sm ml-12" id="modalSubtitle">Detail distribusi pergerakan per jam.</p>
+                            <p class="text-slate-500 text-sm ml-12" id="modalSubtitle">
+                                Estimasi rata-rata pergerakan harian dari: <strong class="text-indigo-600">{{ $dataRange }}</strong>
+                            </p>
+                            <!-- Hidden span to store original range for JS reset -->
+                            <span id="dataRangeLabel" class="hidden">{{ $dataRange }}</span>
                         </div>
                     </div>
 
@@ -622,8 +663,8 @@
                         <div class="lg:col-span-2 space-y-4">
                             <!-- Metrics Row inside Chart Area for Mobile/Tablet -->
                             <div class="grid grid-cols-3 gap-3">
-                                <div class="bg-indigo-50/50 p-3 rounded-2xl border border-indigo-100">
-                                    <div class="text-[10px] text-indigo-500 font-bold uppercase tracking-wider">Total</div>
+                                <div class="bg-rose-50/50 p-3 rounded-2xl border border-rose-100">
+                                    <div class="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Total</div>
                                     <div class="text-xl font-extrabold text-[#1F3C88] font-outfit" id="modalTotalFlights">-</div>
                                 </div>
                                 <div class="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
@@ -640,7 +681,7 @@
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <!-- Line Chart (Hourly Profile) -->
                                 <div class="h-[280px] w-full bg-slate-50/50 rounded-2xl p-2 border border-slate-100 shadow-inner relative">
-                                    <h4 class="absolute top-3 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Profil Per Jam</h4>
+                                    <h4 class="absolute top-3 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Profil Per Jam (UTC 0)</h4>
                                     <canvas id="drillDownChart"></canvas>
                                 </div>
 
@@ -657,16 +698,16 @@
                                     </div>
                                     <!-- Legend -->
                                     <div class="flex gap-3 mt-2">
-                                        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#1F3C88]"></span><span class="text-[10px] text-slate-500 font-bold">Dom</span></div>
-                                        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#FDBE33]"></span><span class="text-[10px] text-slate-500 font-bold">Int</span></div>
-                                        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-400"></span><span class="text-[10px] text-slate-500 font-bold">Train</span></div>
+                                        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981]"></span><span class="text-[10px] text-slate-500 font-bold">Dom</span></div>
+                                        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span><span class="text-[10px] text-slate-500 font-bold">Int</span></div>
+                                        <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span class="text-[10px] text-slate-500 font-bold">Train</span></div>
                                     </div>
                                 </div>
                             </div>
 
                              <!-- Top 3 Hours List -->
-                            <div class="bg-indigo-50/30 rounded-2xl p-4 border border-indigo-100/50">
-                                <h4 class="text-xs font-bold text-indigo-400 uppercase tracking-wider mb-3">3 Jam Tersibuk</h4>
+                            <div class="bg-rose-50/30 rounded-2xl p-4 border border-rose-100/50">
+                                <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">3 Jam Tersibuk (UTC 0)</h4>
                                 <div id="modalTop3List" class="grid grid-cols-3 gap-4">
                                     <!-- Populated by JS -->
                                 </div>
@@ -743,7 +784,7 @@
                     </div>
                     
                     <div class="mt-6 flex justify-end">
-                        <button onclick="closeModal()" class="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:text-[#1F3C88] transition shadow-sm text-sm">Tutup Detail</button>
+                        <button id="closeModalBtnText" class="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-50 hover:text-[#1F3C88] transition shadow-sm text-sm">Tutup Detail</button>
                     </div>
                 </div>
             </div>
@@ -755,7 +796,7 @@
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" id="eventModalBackdrop"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div class="relative transform overflow-hidden rounded-[2rem] bg-white/95 backdrop-blur-xl text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border border-white/60">
+                <div id="eventModalPanel" class="relative transform overflow-hidden rounded-[2rem] bg-white/95 backdrop-blur-xl text-left shadow-2xl transition-all duration-300 opacity-100 scale-100 sm:my-8 sm:w-full sm:max-w-lg border border-white/60">
                     
                     <!-- Modal Header -->
                     <div class="bg-gradient-to-r from-slate-50 to-white px-6 py-5 border-b border-slate-100 flex justify-between items-center">
@@ -807,7 +848,7 @@
                         <form id="deleteEventForm" method="POST" action="" class="hidden m-0">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="px-4 py-2 text-rose-500 font-bold text-sm rounded-xl hover:bg-rose-100 transition shadow-sm border border-rose-200" onclick="return confirm('Hapus event ini?');">
+                            <button type="button" id="triggerDeleteEventBtn" class="px-4 py-2 text-rose-500 font-bold text-sm rounded-xl hover:bg-rose-100 transition shadow-sm border border-rose-200">
                                 Hapus
                             </button>
                         </form>
@@ -824,12 +865,12 @@
 
     <!-- Add Event Modal -->
     <div id="addEventModal" class="fixed inset-0 z-[100] hidden" role="dialog" aria-modal="true">
-        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onclick="document.getElementById('addEventModal').classList.add('hidden');"></div>
-        <div class="fixed inset-0 z-10 flex items-center justify-center p-4">
-            <div class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-2xl w-full max-w-md transform transition-all border border-white/60">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" id="addEventBackdrop"></div>
+        <div class="fixed inset-0 z-10 flex items-center justify-center p-4" id="addEventWrapper">
+            <div id="addEventPanel" class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-2xl w-full max-w-md transform scale-95 opacity-0 transition-all duration-300 border border-white/60">
                 <div class="bg-gradient-to-r from-slate-50 to-white px-6 py-5 border-b border-slate-100 flex justify-between items-center rounded-t-[2rem]">
                     <h3 class="text-xl font-bold text-[#1F3C88] font-outfit">Tambah Event Baru</h3>
-                    <button type="button" onclick="document.getElementById('addEventModal').classList.add('hidden');" class="bg-slate-100 p-2 rounded-full text-slate-400 hover:bg-rose-100 hover:text-rose-500 transition-colors">
+                    <button type="button" id="closeAddEventBtn" class="bg-slate-100 p-2 rounded-full text-slate-400 hover:bg-rose-100 hover:text-rose-500 transition-colors">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                     </button>
                 </div>
@@ -863,10 +904,30 @@
                         </div>
                     </div>
                     <div class="mt-8 flex justify-end gap-3">
-                        <button type="button" onclick="document.getElementById('addEventModal').classList.add('hidden');" class="px-5 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-50 rounded-xl transition">Batal</button>
+                        <button type="button" id="closeAddEventBtnText" class="px-5 py-2.5 text-slate-600 font-bold text-sm hover:bg-slate-50 rounded-xl transition">Batal</button>
                         <button type="submit" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md shadow-indigo-600/20 transition">Simpan Event</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="fixed inset-0 z-[110] hidden" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity opacity-0" id="deleteConfirmBackdrop"></div>
+        <div class="fixed inset-0 z-10 flex items-center justify-center p-4" id="deleteConfirmWrapper">
+            <div id="deleteConfirmPanel" class="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-2xl w-full max-w-sm transform scale-95 opacity-0 transition-all duration-300 border border-white/60 text-center p-8">
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-rose-100 mb-6">
+                    <svg class="h-8 w-8 text-rose-600" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-[#1F3C88] font-outfit mb-2">Hapus Event?</h3>
+                <p class="text-sm text-slate-500 mb-8">Data historis event ini akan dihapus secara permanen. Tindakan ini tidak dapat dibatalkan.</p>
+                <div class="flex justify-center gap-3">
+                    <button type="button" id="cancelDeleteBtn" class="px-5 py-2.5 text-slate-600 font-bold text-sm bg-slate-50 hover:bg-slate-100 rounded-xl transition">Batal</button>
+                    <button type="button" id="confirmDeleteBtn" class="px-5 py-2.5 bg-rose-500 hover:bg-rose-600 text-white font-bold text-sm rounded-xl shadow-md shadow-rose-500/20 transition">Ya, Hapus</button>
+                </div>
             </div>
         </div>
     </div>

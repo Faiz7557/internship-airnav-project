@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", function () {
                     { label: 'Total Flights', data: trendData.data || [], borderColor: COLOR_PRIMARY, backgroundColor: createGradient(ctx, 'rgba(31, 60, 136, 0.2)', 'rgba(31, 60, 136, 0.0)'), borderWidth: 3, fill: true, pointBackgroundColor: '#fff', pointBorderColor: COLOR_PRIMARY, pointBorderWidth: 2 },
                     { label: 'Domestik', data: trendData.dom || [], borderColor: '#10b981', backgroundColor: createGradient(ctx, 'rgba(16, 185, 129, 0.2)', 'rgba(16, 185, 129, 0.0)'), borderWidth: 2, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#10b981', hidden: true },
                     { label: 'Internasional', data: trendData.int || [], borderColor: '#f59e0b', backgroundColor: createGradient(ctx, 'rgba(245, 158, 11, 0.2)', 'rgba(245, 158, 11, 0.0)'), borderWidth: 2, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#f59e0b', hidden: true },
-                    { label: 'Training', data: trendData.training || [], borderColor: '#64748b', backgroundColor: createGradient(ctx, 'rgba(100, 116, 139, 0.2)', 'rgba(100, 116, 139, 0.0)'), borderWidth: 2, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#64748b', hidden: true }
+                    { label: 'Training', data: trendData.training || [], borderColor: '#a855f7', backgroundColor: createGradient(ctx, 'rgba(168, 85, 247, 0.2)', 'rgba(168, 85, 247, 0.0)'), borderWidth: 2, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#a855f7', hidden: true }
                 ]
             },
             options: withDataLabels({
@@ -352,7 +352,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 labels: ['Domestik', 'Internasional', 'Training'],
                 datasets: [{
                     data: [catData.dom, catData.int, catData.training],
-                    backgroundColor: [COLOR_PRIMARY, COLOR_SECONDARY, '#cbd5e1'],
+                    backgroundColor: ['#10b981', '#f59e0b', '#a855f7'],
                     borderWidth: 0, hoverOffset: 4
                 }]
             },
@@ -379,17 +379,46 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'bar',
             data: {
                 labels: labels,
-                datasets: [{
-                    label: 'Frekuensi',
-                    data: values,
-                    backgroundColor: (ctx) => {
-                        const v = ctx.dataset.data[ctx.dataIndex];
-                        const opacity = 0.35 + 0.65 * (v / maxPeakVal);
-                        return `rgba(244, 63, 94, ${opacity.toFixed(2)})`;
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Trend',
+                        data: values,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'transparent',
+                        borderWidth: 2.5,
+                        tension: 0.45,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#f59e0b',
+                        pointBorderWidth: 2.5,
+                        order: 0,
+                        datalabels: { display: false }
                     },
-                    borderRadius: 6,
-                    clip: false
-                }]
+                    {
+                        type: 'bar',
+                        label: 'Frekuensi',
+                        data: values,
+                        backgroundColor: (ctx) => {
+                            const v = ctx.dataset.data[ctx.dataIndex];
+                            const opacity = 0.35 + 0.65 * (v / maxPeakVal);
+                            const chartCtx = ctx.chart.ctx;
+                            const chartArea = ctx.chart.chartArea;
+                            const top = chartArea ? chartArea.top : 0;
+                            const bottom = chartArea ? chartArea.bottom : 200;
+                            const grad = chartCtx.createLinearGradient(0, top, 0, bottom);
+                            grad.addColorStop(0, `rgba(244, 63, 94, ${opacity.toFixed(2)})`);
+                            grad.addColorStop(1, `rgba(159, 18, 57, ${opacity.toFixed(2)})`);
+                            return grad;
+                        },
+                        borderRadius: 6,
+                        clip: false,
+                        order: 1,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -426,8 +455,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         grid: { display: false },
                         border: { display: false },
                         ticks: {
-                            font: { family: "'Outfit', sans-serif", size: 9, weight: '500' },
-                            color: '#94a3b8',
+                            font: { family: "'Outfit', sans-serif", size: 10, weight: '600' },
+                            color: '#64748b',
                             maxRotation: 0,
                             callback: (val, i) => i % 2 === 0 ? labels[i] : ''
                         }
@@ -452,17 +481,50 @@ document.addEventListener("DOMContentLoaded", function () {
             type: 'bar',
             data: {
                 labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-                datasets: [{
-                    label: 'Avg Flights',
-                    data: dayValues,
-                    backgroundColor: (ctx) => {
-                        // Highlight weekend bars
-                        return ctx.dataIndex >= 5 ? 'rgba(99, 102, 241, 0.75)' : 'rgba(31, 60, 136, 0.82)';
+                datasets: [
+                    {
+                        type: 'line',
+                        label: 'Trend',
+                        data: dayValues,
+                        borderColor: '#f43f5e',
+                        backgroundColor: 'transparent',
+                        borderWidth: 3,
+                        tension: 0.45,
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#ffffff',
+                        pointBorderColor: '#f43f5e',
+                        pointBorderWidth: 2.5,
+                        order: 0,
+                        datalabels: { display: false }
                     },
-                    borderRadius: 8,
-                    hoverBackgroundColor: COLOR_SECONDARY,
-                    clip: false
-                }]
+                    {
+                        type: 'bar',
+                        label: 'Avg Flights',
+                        data: dayValues,
+                        backgroundColor: (ctx) => {
+                            const chartCtx = ctx.chart.ctx;
+                            const chartArea = ctx.chart.chartArea;
+                            const top = chartArea ? chartArea.top : 0;
+                            const bottom = chartArea ? chartArea.bottom : 300;
+                            const grad = chartCtx.createLinearGradient(0, top, 0, bottom + 40);
+                            if (ctx.dataIndex >= 5) {
+                                grad.addColorStop(0, 'rgba(129, 140, 248, 0.95)');
+                                grad.addColorStop(1, 'rgba(49, 46, 129, 0.95)');
+                            } else {
+                                grad.addColorStop(0, 'rgba(59, 130, 246, 0.95)');
+                                grad.addColorStop(1, 'rgba(30, 58, 138, 0.95)');
+                            }
+                            return grad;
+                        },
+                        borderRadius: 8,
+                        hoverBackgroundColor: COLOR_SECONDARY,
+                        clip: false,
+                        order: 1,
+                        barPercentage: 0.7,
+                        categoryPercentage: 0.8
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -508,8 +570,8 @@ document.addEventListener("DOMContentLoaded", function () {
                         grid: { display: false },
                         border: { display: false },
                         ticks: {
-                            font: { family: "'Outfit', sans-serif", size: 11, weight: '600' },
-                            color: '#94a3b8'
+                            font: { family: "'Outfit', sans-serif", size: 12, weight: '800' },
+                            color: '#ffffff'
                         }
                     }
                 }
@@ -527,6 +589,10 @@ document.addEventListener("DOMContentLoaded", function () {
         modal.classList.remove('hidden');
         const dayName = dayLabels[dayIndex];
         document.getElementById('modalDayName').innerText = dayName;
+
+        // Reset the subtitle to the exact filtered data range
+        const dataRangeLabel = document.getElementById('dataRangeLabel') ? document.getElementById('dataRangeLabel').innerText : '';
+        document.getElementById('modalSubtitle').innerHTML = `Estimasi rata-rata pergerakan harian dari: <strong class="text-indigo-600">${dataRangeLabel}</strong>`;
 
         const profileData = hourlyProfiles[dayIndex + 1] || [];
 
@@ -572,9 +638,9 @@ document.addEventListener("DOMContentLoaded", function () {
             .slice(0, 3);
 
         const top3HTML = top3.map((item, i) =>
-            `<div class="flex justify-between items-center py-2 border-b border-slate-200 last:border-0 border-r last:border-r-0 pr-4 last:pr-0 border-indigo-100">
+            `<div class="flex justify-between items-center py-2 border-b border-slate-200 last:border-0 border-r last:border-r-0 pr-4 last:pr-0 border-rose-100">
                 <div class="flex items-center gap-2">
-                    <span class="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">${i + 1}</span>
+                    <span class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">${i + 1}</span>
                     <span class="text-slate-600 font-medium text-xs">${item.hour}</span>
                 </div>
                 <span class="font-bold text-slate-800 text-sm">${item.val} <span class="text-[10px] font-normal text-slate-400">Pnb</span></span>
@@ -596,7 +662,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const ctxDD = document.getElementById('drillDownChart').getContext('2d');
         if (drillDownChartInstance) drillDownChartInstance.destroy();
 
-        const gradientDD = createGradient(ctxDD, 'rgba(99, 102, 241, 0.5)', 'rgba(99, 102, 241, 0.0)');
+        const gradientDD = createGradient(ctxDD, 'rgba(244, 63, 94, 0.5)', 'rgba(244, 63, 94, 0.0)');
 
         drillDownChartInstance = new Chart(ctxDD, {
             type: 'line',
@@ -605,7 +671,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 datasets: [{
                     label: 'Pergerakan',
                     data: profileData,
-                    borderColor: '#4f46e5', backgroundColor: gradientDD, borderWidth: 3, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#4f46e5', pointRadius: 4, tension: 0.4
+                    borderColor: '#f43f5e', backgroundColor: gradientDD, borderWidth: 3, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#f43f5e', pointRadius: 4, tension: 0.4
                 }]
             },
             options: {
@@ -616,13 +682,26 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        const domVal = dayOfWeekComposition?.dom?.[dayIndex + 1] || 0;
-        const intVal = dayOfWeekComposition?.int?.[dayIndex + 1] || 0;
-        const trainVal = dayOfWeekComposition?.training?.[dayIndex + 1] || 0;
-        const totalComp = domVal + intVal + trainVal;
+        const rawDomVal = dayOfWeekComposition?.dom?.[dayIndex + 1] || 0;
+        const rawIntVal = dayOfWeekComposition?.int?.[dayIndex + 1] || 0;
+        const rawTrainVal = dayOfWeekComposition?.training?.[dayIndex + 1] || 0;
+        const rawTotalComp = rawDomVal + rawIntVal + rawTrainVal;
+
+        // Sinkronisasi data komposisi dengan total profil jam (totalDaily) agar tidak ada discrepancy total
+        const scaleComp = rawTotalComp > 0 ? (totalDaily / rawTotalComp) : 0;
+        let domVal = Math.round(rawDomVal * scaleComp);
+        let intVal = Math.round(rawIntVal * scaleComp);
+        let trainVal = totalDaily - domVal - intVal;
+
+        // Jika negative fallback (safety net)
+        if (trainVal < 0) {
+            trainVal = 0;
+            intVal = totalDaily - domVal;
+            if (intVal < 0) { intVal = 0; domVal = totalDaily; }
+        }
 
         const totalEl = document.getElementById('modalCompTotal');
-        if (totalEl) totalEl.innerText = Math.round(totalComp).toLocaleString();
+        if (totalEl) totalEl.innerText = totalDaily.toLocaleString();
 
         const ctxComp = document.getElementById('modalCompositionChart');
         if (ctxComp) {
@@ -633,7 +712,199 @@ document.addEventListener("DOMContentLoaded", function () {
                     labels: ['Domestik', 'Internasional', 'Training'],
                     datasets: [{
                         data: [domVal, intVal, trainVal],
-                        backgroundColor: ['#10b981', '#f59e0b', '#94a3b8'],
+                        backgroundColor: ['#10b981', '#f59e0b', '#a855f7'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${Math.round(c.raw)}` } } }
+                }
+            });
+        }
+
+        void modal.offsetWidth;
+        modalBackdrop.classList.remove('opacity-0');
+        modalPanel.classList.remove('scale-95', 'opacity-0');
+        modalPanel.classList.add('scale-100', 'opacity-100');
+    }
+
+    window.openHeatmapDrillDown = function (dateStr) {
+        const d = (data.heatmapData || []).find(x => x.date === dateStr);
+        if (!d || d.value === 0) return; // Ignore empty days
+
+        modal.classList.remove('hidden');
+
+        const dateObj = new Date(dateStr);
+        const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const dayName = dayNames[dateObj.getDay()];
+
+        // Dynamically overwrite Subtitle for Heatmap specific drilldown
+        document.getElementById('modalDayName').innerText = `${dayName}, ${dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
+        document.getElementById('modalSubtitle').innerHTML = `Estimasi pergerakan rinci berdasarkan tanggal spesifik: <strong class="text-indigo-600">${dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>`;
+
+        // Curve Shifting Math (Replica of DashboardService.php)
+        const weekdayProfile = [1, 1, 1, 1, 2, 5, 15, 20, 18, 12, 10, 10, 10, 11, 12, 16, 18, 15, 10, 8, 6, 4, 3, 2];
+        const weekendProfile = [2, 1, 1, 1, 2, 4, 8, 12, 15, 18, 20, 20, 19, 18, 16, 14, 12, 10, 8, 6, 5, 4, 3, 2];
+
+        const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
+        const baseProfile = isWeekend ? weekendProfile : weekdayProfile;
+
+        const baseMaxWeight = Math.max(...baseProfile);
+        const baseMaxHour = baseProfile.indexOf(baseMaxWeight);
+        const peakHour = d.peak_hour || 0;
+        const shift = peakHour - baseMaxHour;
+
+        let shiftedProfile = [];
+        for (let h = 0; h < 24; h++) {
+            let sourceH = (h - shift + 24) % 24;
+            shiftedProfile[h] = baseProfile[sourceH];
+        }
+
+        let profileData = new Array(24).fill(0);
+        profileData[peakHour] = d.peak_count;
+
+        let remainingTotal = d.value - d.peak_count;
+        if (remainingTotal < 0) {
+            remainingTotal = 0;
+            profileData[peakHour] = d.value;
+        }
+
+        const weightSumWithoutPeak = shiftedProfile.reduce((a, b) => a + b, 0) - shiftedProfile[peakHour];
+
+        if (weightSumWithoutPeak > 0 && remainingTotal > 0) {
+            let accumulated = 0;
+            for (let h = 0; h < 24; h++) {
+                if (h !== peakHour) {
+                    let val = Math.round((shiftedProfile[h] / weightSumWithoutPeak) * remainingTotal);
+                    profileData[h] = val;
+                    accumulated += val;
+                }
+            }
+
+            let diff = Math.floor(remainingTotal - accumulated);
+            if (diff !== 0) {
+                let sortedIndices = shiftedProfile.map((w, i) => ({ w, i })).sort((a, b) => b.w - a.w);
+                while (diff !== 0) {
+                    let changed = false;
+                    for (let i = 0; i < sortedIndices.length; i++) {
+                        let h = sortedIndices[i].i;
+                        if (h !== peakHour) {
+                            if (diff > 0) { profileData[h]++; diff--; changed = true; }
+                            else if (diff < 0 && profileData[h] > 0) { profileData[h]--; diff++; changed = true; }
+                            if (diff === 0) break;
+                        }
+                    }
+                    if (!changed) break;
+                }
+            }
+        }
+
+        // Modal Rendering Mapping
+        const totalDaily = d.value;
+        const peakValue = d.peak_count;
+        const peakHourFmt = hourLabels[peakHour] || '-';
+
+        document.getElementById('modalTotalFlights').innerText = totalDaily.toLocaleString();
+        document.getElementById('modalPeakHour').innerText = peakHourFmt;
+
+        const avgDaily = data.avgDailyFlights || 0;
+        let status = 'Normal';
+        let statusColor = 'text-emerald-600';
+        if (totalDaily > avgDaily * 1.1) { status = 'Tinggi'; statusColor = 'text-rose-600'; }
+        else if (totalDaily < avgDaily * 0.9) { status = 'Rendah'; statusColor = 'text-slate-500'; }
+
+        const statusEl = document.getElementById('modalStatus');
+        statusEl.innerText = status;
+        statusEl.className = `text-lg font-bold ${statusColor}`;
+
+        const calcSum = (start, end) => profileData.slice(start, end).reduce((a, b) => a + b, 0);
+
+        const volMalam = calcSum(0, 6);
+        const volPagi = calcSum(6, 12);
+        const volSiang = calcSum(12, 18);
+        const volSore = calcSum(18, 24);
+
+        const updateBar = (idVal, idBar, val, total) => {
+            const pct = total > 0 ? (val / total) * 100 : 0;
+            document.getElementById(idVal).innerText = `${val} (${Math.round(pct)}%)`;
+            document.getElementById(idBar).style.width = `${pct}%`;
+        };
+
+        updateBar('statPagiVal', 'statPagiBar', volPagi, totalDaily);
+        updateBar('statSiangVal', 'statSiangBar', volSiang, totalDaily);
+        updateBar('statSoreVal', 'statSoreBar', volSore, totalDaily);
+        updateBar('statMalamVal', 'statMalamBar', volMalam, totalDaily);
+
+        const top3 = profileData
+            .map((val, idx) => ({ hour: hourLabels[idx], val }))
+            .sort((a, b) => b.val - a.val)
+            .slice(0, 3);
+
+        const top3HTML = top3.map((item, i) =>
+            `<div class="flex justify-between items-center py-2 border-b border-slate-200 last:border-0 border-r last:border-r-0 pr-4 last:pr-0 border-rose-100">
+                <div class="flex items-center gap-2">
+                    <span class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">${i + 1}</span>
+                    <span class="text-slate-600 font-medium text-xs">${item.hour}</span>
+                </div>
+                <span class="font-bold text-slate-800 text-sm">${item.val} <span class="text-[10px] font-normal text-slate-400">Pnb</span></span>
+            </div>`
+        ).join('');
+        const listContainer = document.getElementById('modalTop3List');
+        if (listContainer) listContainer.innerHTML = top3HTML;
+
+        const periods = [
+            { name: 'Pagi', val: volPagi },
+            { name: 'Siang', val: volSiang },
+            { name: 'Sore', val: volSore },
+            { name: 'Malam', val: volMalam }
+        ];
+        const maxPeriod = periods.reduce((prev, current) => (prev.val > current.val) ? prev : current);
+        document.getElementById('modalInsightText').innerHTML = `Trafik terpadat terjadi pada <span class="font-bold text-slate-700">${maxPeriod.name} hari</span> dengan total ${maxPeriod.val} pergerakan.`;
+
+        const ctxDD = document.getElementById('drillDownChart').getContext('2d');
+        if (drillDownChartInstance) drillDownChartInstance.destroy();
+
+        const gradientDD = createGradient(ctxDD, 'rgba(244, 63, 94, 0.5)', 'rgba(244, 63, 94, 0.0)');
+
+        drillDownChartInstance = new Chart(ctxDD, {
+            type: 'line',
+            data: {
+                labels: hourLabels,
+                datasets: [{
+                    label: 'Pergerakan',
+                    data: profileData,
+                    borderColor: '#f43f5e', backgroundColor: gradientDD, borderWidth: 3, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#f43f5e', pointRadius: 4, tension: 0.4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, zoom: { pan: { enabled: false }, zoom: { wheel: { enabled: false } } } },
+                scales: { y: { beginAtZero: true, grid: { color: 'rgba(226, 232, 240, 0.5)' } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } } }
+            }
+        });
+
+        const domVal = d.dom || 0;
+        const intVal = d.int || 0;
+        const trainVal = d.training || 0;
+
+        const totalEl = document.getElementById('modalCompTotal');
+        if (totalEl) totalEl.innerText = totalDaily.toLocaleString();
+
+        const ctxComp = document.getElementById('modalCompositionChart');
+        if (ctxComp) {
+            if (modalCompositionChartInstance) modalCompositionChartInstance.destroy();
+            modalCompositionChartInstance = new Chart(ctxComp.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Domestik', 'Internasional', 'Training'],
+                    datasets: [{
+                        data: [domVal, intVal, trainVal],
+                        backgroundColor: ['#10b981', '#f59e0b', '#a855f7'],
                         borderWidth: 0,
                         hoverOffset: 4
                     }]
@@ -660,7 +931,126 @@ document.addEventListener("DOMContentLoaded", function () {
         setTimeout(() => { modal.classList.add('hidden'); }, 300);
     }
     if (closeModalBtns) closeModalBtns.forEach(btn => { if (btn) btn.addEventListener('click', closeModal); });
-    if (modalBackdrop) modalBackdrop.addEventListener('click', closeModal);
+
+    // modalBackdrop is z-0, but modalWrapper is z-10 and covers the screen.
+    const modalWrapper = document.getElementById('modalWrapper');
+    if (modalWrapper) {
+        modalWrapper.addEventListener('click', (e) => {
+            // Only close if clicking the wrapper itself directly (not the panel inside)
+            if (e.target === modalWrapper) closeModal();
+        });
+    }
+
+    // --- MODAL: Add Event ---
+    const addEventModal = document.getElementById('addEventModal');
+    const addEventPanel = document.getElementById('addEventPanel');
+    const addEventBackdrop = document.getElementById('addEventBackdrop');
+    const addEventWrapper = document.getElementById('addEventWrapper');
+    const btnOpenAddEvent = document.getElementById('openAddEventBtn');
+    const btnCloseAddEvent = document.getElementById('closeAddEventBtn');
+    const btnCloseAddEventText = document.getElementById('closeAddEventBtnText');
+
+    function openAddEventModal() {
+        if (!addEventModal) return;
+        addEventModal.classList.remove('hidden');
+        // Force reflow
+        void addEventPanel.offsetWidth;
+        addEventBackdrop.classList.remove('opacity-0');
+        addEventPanel.classList.remove('scale-95', 'opacity-0');
+        addEventPanel.classList.add('scale-100', 'opacity-100');
+    }
+
+    function closeAddEventModal() {
+        if (!addEventModal) return;
+        addEventBackdrop.classList.add('opacity-0');
+        addEventPanel.classList.remove('scale-100', 'opacity-100');
+        addEventPanel.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => { addEventModal.classList.add('hidden'); }, 300);
+    }
+
+    if (btnOpenAddEvent) btnOpenAddEvent.addEventListener('click', openAddEventModal);
+    if (btnCloseAddEvent) btnCloseAddEvent.addEventListener('click', closeAddEventModal);
+    if (btnCloseAddEventText) btnCloseAddEventText.addEventListener('click', closeAddEventModal);
+
+    if (addEventWrapper) {
+        addEventWrapper.addEventListener('click', (e) => {
+            if (e.target === addEventWrapper) closeAddEventModal();
+        });
+    }
+
+    // --- MODAL: Event Detail & Delete Confirmation ---
+    const btnCloseEventText = document.getElementById('closeEventModalBtnText');
+    const deleteForm = document.getElementById('deleteEventForm');
+    const triggerDeleteBtn = document.getElementById('triggerDeleteEventBtn');
+
+    const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+    const deleteConfirmPanel = document.getElementById('deleteConfirmPanel');
+    const deleteConfirmBackdrop = document.getElementById('deleteConfirmBackdrop');
+    const deleteConfirmWrapper = document.getElementById('deleteConfirmWrapper');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+
+    function closeEventDetailModal() {
+        const evModal = document.getElementById('eventDetailModal');
+        const evPanel = document.getElementById('eventModalPanel');
+        const evBackdrop = document.getElementById('eventModalBackdrop');
+        if (!evModal) return;
+
+        if (evBackdrop) evBackdrop.classList.add('opacity-0');
+        if (evPanel) {
+            evPanel.classList.remove('scale-100', 'opacity-100');
+            evPanel.classList.add('scale-95', 'opacity-0');
+        }
+        setTimeout(() => { evModal.classList.add('hidden'); }, 300);
+    }
+
+    if (btnCloseEventText) btnCloseEventText.addEventListener('click', closeEventDetailModal);
+    const btnCloseEventIcon = document.getElementById('closeEventModalBtn');
+    if (btnCloseEventIcon) btnCloseEventIcon.addEventListener('click', closeEventDetailModal);
+
+    // Replace default confirm() with Custom Modal
+    if (triggerDeleteBtn && deleteConfirmModal) {
+        triggerDeleteBtn.addEventListener('click', () => {
+            // Hide the event detail modal temporarily to focus on confirmation
+            const evModal = document.getElementById('eventDetailModal');
+            if (evModal) evModal.classList.add('hidden');
+
+            deleteConfirmModal.classList.remove('hidden');
+            void deleteConfirmPanel.offsetWidth;
+            deleteConfirmBackdrop.classList.remove('opacity-0');
+            deleteConfirmPanel.classList.remove('scale-95', 'opacity-0');
+            deleteConfirmPanel.classList.add('scale-100', 'opacity-100');
+        });
+    }
+
+    function closeDeleteConfirmModal() {
+        if (!deleteConfirmModal) return;
+        deleteConfirmBackdrop.classList.add('opacity-0');
+        deleteConfirmPanel.classList.remove('scale-100', 'opacity-100');
+        deleteConfirmPanel.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+            deleteConfirmModal.classList.add('hidden');
+            // Bring back the event detail modal if they cancel
+            const evModal = document.getElementById('eventDetailModal');
+            if (evModal) evModal.classList.remove('hidden');
+        }, 300);
+    }
+
+    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', closeDeleteConfirmModal);
+    if (deleteConfirmWrapper) {
+        deleteConfirmWrapper.addEventListener('click', (e) => {
+            if (e.target === deleteConfirmWrapper) closeDeleteConfirmModal();
+        });
+    }
+
+    if (confirmDeleteBtn && deleteForm) {
+        confirmDeleteBtn.addEventListener('click', () => {
+            // Add loading state
+            confirmDeleteBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline z-10" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Menghapus...';
+            confirmDeleteBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            deleteForm.submit();
+        });
+    }
 
     // --- Yearly Comparison Chart (Aggregated/Zoomable) ---
     if (data.yearlyComparison) {
@@ -855,44 +1245,62 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     // --- Helper: Update KPI Cards (Client-Side) ---
-    const updateSeasonalStats = (currYear, prevYear, allData) => {
-        const currData = allData.filter(d => d.year == currYear);
-        if (currData.length === 0) return;
+    const updateSeasonalStats = (allData) => {
+        const kpiMonth1El = document.getElementById('kpiMonth1');
+        const kpiYear1El = document.getElementById('kpiYear1');
+        const kpiMonth2El = document.getElementById('kpiMonth2');
+        const kpiYear2El = document.getElementById('kpiYear2');
 
-        const maxDateStr = currData.reduce((max, p) => p.date > max ? p.date : max, "0000-00-00");
-        const getDayId = (dStr) => {
-            const d = new Date(dStr);
-            return d.getMonth() * 100 + d.getDate();
+        if (!kpiMonth1El || !kpiYear1El || !allData || allData.length === 0) return;
+
+        const m1 = kpiMonth1El.value;
+        const y1 = kpiYear1El.value;
+        const m2 = kpiMonth2El ? kpiMonth2El.value : 'all';
+        const y2 = kpiYear2El ? kpiYear2El.value : '';
+
+        // Helper to filter data by month/year
+        const filterData = (month, year) => {
+            if (!year) return [];
+            return allData.filter(d => {
+                if (d.year != year) return false;
+                if (month !== 'all' && d.month != month) return false;
+                return true;
+            });
         };
-        const cutoffId = getDayId(maxDateStr);
 
-        const prevData = allData.filter(d => {
-            if (d.year != prevYear) return false;
-            const dId = getDayId(d.date);
-            return dId <= cutoffId;
-        });
+        const data1 = filterData(m1, y1);
+        const data2 = filterData(m2, y2);
 
         const calcStats = (arr) => {
-            if (arr.length === 0) return { total: 0, peak: 0, avg: 0 };
+            if (arr.length === 0) return { total: 0, peakHour: 0, peakDay: 0, avg: 0 };
             const total = arr.reduce((a, b) => a + b.value, 0);
-            const peak = Math.max(...arr.map(d => d.value));
+            const peakDay = Math.max(...arr.map(d => d.value));
+            const peakHour = Math.max(...arr.map(d => d.peak_count || 0));
             const avg = Math.round(total / arr.length);
-            return { total, peak, avg };
+            return { total, peakHour, peakDay, avg };
         };
 
-        const currStats = calcStats(currData);
-        const prevStats = calcStats(prevData);
+        const stats1 = calcStats(data1);
+        const stats2 = calcStats(data2);
 
         const calcGrowth = (curr, prev) => {
-            if (prev === 0) return 100;
+            if (prev === 0) return curr > 0 ? 100 : 0;
             return Math.round(((curr - prev) / prev) * 100 * 10) / 10;
         };
 
-        const totalGrowth = calcGrowth(currStats.total, prevStats.total);
-        const peakGrowth = calcGrowth(currStats.peak, prevStats.peak);
-        const avgGrowth = calcGrowth(currStats.avg, prevStats.avg);
+        const totalGrowth = calcGrowth(stats1.total, stats2.total);
+        const avgGrowth = calcGrowth(stats1.avg, stats2.avg);
+        const peakDayGrowth = calcGrowth(stats1.peakDay, stats2.peakDay);
+        const peakHourGrowth = calcGrowth(stats1.peakHour, stats2.peakHour);
 
-        const updateCard = (idVal, idIcon, idText, idContainer, idVs, val, growth, prevYearLbl) => {
+        // Format label for vs text
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
+        let vsLabel = "-";
+        if (y2) {
+            vsLabel = `vs ${m2 === 'all' ? '' : monthNames[m2 - 1]} ${y2}`.trim();
+        }
+
+        const updateCard = (idVal, idIcon, idText, idContainer, idVs, val, growth, prevLabel) => {
             const elVal = document.getElementById(idVal);
             if (elVal) elVal.innerText = val.toLocaleString();
 
@@ -900,15 +1308,21 @@ document.addEventListener("DOMContentLoaded", function () {
             if (elText) elText.innerText = Math.abs(growth) + '%';
 
             const elVs = document.getElementById(idVs);
-            if (elVs) {
-                // If it's a MoM card, the label might already contain 'vs', so we can just use the provided text
-                elVs.innerText = prevYearLbl.toString().startsWith('vs') ? prevYearLbl : 'vs ' + prevYearLbl;
-            }
+            if (elVs) elVs.innerText = prevLabel;
 
             const container = document.getElementById(idContainer);
             const iconSpan = document.getElementById(idIcon);
 
-            if (container) container.className = `flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full w-fit mt-2 ${growth >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`;
+            if (container) {
+                if (y2) {
+                    container.classList.remove('hidden');
+                    container.className = `flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full w-fit mt-2 ${growth >= 0 ? 'text-emerald-600 bg-emerald-50' : 'text-rose-600 bg-rose-50'}`;
+                } else {
+                    container.classList.add('hidden');
+                    // Retain sizing classes for layout stability even when hidden
+                    container.className = `hidden flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full w-fit mt-2`;
+                }
+            }
 
             const upIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>`;
             const downIcon = `<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
@@ -916,62 +1330,16 @@ document.addEventListener("DOMContentLoaded", function () {
             if (iconSpan) iconSpan.innerHTML = growth >= 0 ? upIcon : downIcon;
         };
 
-        updateCard('kpiTotalVal', 'kpiTotalGrowthIcon', 'kpiTotalGrowthText', 'kpiTotalGrowthContainer', 'kpiTotalVs', currStats.total, totalGrowth, prevYear);
-        updateCard('kpiPeakVal', 'kpiPeakGrowthIcon', 'kpiPeakGrowthText', 'kpiPeakGrowthContainer', 'kpiPeakVs', currStats.peak, peakGrowth, prevYear);
-        updateCard('kpiAvgVal', 'kpiAvgGrowthIcon', 'kpiAvgGrowthText', 'kpiAvgGrowthContainer', 'kpiAvgVs', currStats.avg, avgGrowth, prevYear);
-
-        // MoM calculations
-        let currMonthData = [];
-        let prevMonthData = [];
-        let momSubtitle = 'vs Last Month';
-
-        if (currData.length > 0 && maxDateStr !== "0000-00-00") {
-            const maxD = new Date(maxDateStr);
-            const maxMonth = maxD.getMonth() + 1; // 1-12
-            const maxYear = maxD.getFullYear();
-
-            let prevMonth = maxMonth - 1;
-            let prevMonthYear = maxYear;
-            if (prevMonth === 0) {
-                prevMonth = 12;
-                prevMonthYear = maxYear - 1;
-            }
-
-            currMonthData = allData.filter(d => d.year == maxYear && d.month == maxMonth);
-            prevMonthData = allData.filter(d => d.year == prevMonthYear && d.month == prevMonth);
-
-            const monthNames = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agt", "Sep", "Okt", "Nov", "Des"];
-            momSubtitle = `vs ${monthNames[prevMonth - 1]} ${prevMonthYear !== maxYear ? prevMonthYear : ''}`;
-        }
-
-        const calcMomStats = (arr) => {
-            if (arr.length === 0) return { peakHour: 0, avgDaily: 0 };
-            const peakHour = Math.max(...arr.map(d => d.peak || 0));
-            const avgDaily = Math.round(arr.reduce((a, b) => a + b.value, 0) / arr.length);
-            return { peakHour, avgDaily };
-        };
-
-        const currMom = calcMomStats(currMonthData);
-        const prevMom = calcMomStats(prevMonthData);
-
-        const peakHourGrowth = calcGrowth(currMom.peakHour, prevMom.peakHour);
-        const avgDailyGrowth = calcGrowth(currMom.avgDaily, prevMom.avgDaily);
-
-        updateCard('kpiMomPeakVal', 'kpiMomPeakGrowthIcon', 'kpiMomPeakGrowthText', 'kpiMomPeakGrowthContainer', 'kpiMomPeakVs', currMom.peakHour, peakHourGrowth, momSubtitle);
-        updateCard('kpiMomAvgVal', 'kpiMomAvgGrowthIcon', 'kpiMomAvgGrowthText', 'kpiMomAvgGrowthContainer', 'kpiMomAvgVs', currMom.avgDaily, avgDailyGrowth, momSubtitle);
+        updateCard('kpiTotalVal', 'kpiTotalGrowthIcon', 'kpiTotalGrowthText', 'kpiTotalGrowthContainer', 'kpiTotalVs', stats1.total, totalGrowth, vsLabel);
+        updateCard('kpiAvgVal', 'kpiAvgGrowthIcon', 'kpiAvgGrowthText', 'kpiAvgGrowthContainer', 'kpiAvgVs', stats1.avg, avgGrowth, vsLabel);
+        updateCard('kpiPeakVal', 'kpiPeakGrowthIcon', 'kpiPeakGrowthText', 'kpiPeakGrowthContainer', 'kpiPeakVs', stats1.peakDay, peakDayGrowth, vsLabel);
+        updateCard('kpiHourPeakVal', 'kpiHourPeakGrowthIcon', 'kpiHourPeakGrowthText', 'kpiHourPeakGrowthContainer', 'kpiHourPeakVs', stats1.peakHour, peakHourGrowth, vsLabel);
     };
 
     // --- 4. CALENDAR HEATMAP RENDERER (Dynamic) ---
     const renderHeatmap = (targetYear, mode = 'year') => {
         const container = document.getElementById('calendarHeatmap');
         const monthContainer = document.getElementById('monthGridContainer');
-
-        // Heatmap only uses its single year filter now, but KPI stats 
-        // will rely on the global selections.
-        const globalYearSelect = document.getElementById('globalYearSelect');
-        const globalCompareSelect = document.getElementById('globalCompareSelect');
-        const compareYear = globalCompareSelect && globalCompareSelect.value ? globalCompareSelect.value : ((globalYearSelect ? globalYearSelect.value : targetYear) - 1);
-        const kpiTargetYear = globalYearSelect ? globalYearSelect.value : targetYear;
 
         if (!container) return;
 
@@ -998,8 +1366,10 @@ document.addEventListener("DOMContentLoaded", function () {
             return 'bg-[#1F3C88]';
         };
 
-        // Update KPI Stats based on the Global Filters independently of Heatmap Target Year
-        updateSeasonalStats(kpiTargetYear, compareYear, allData);
+        // Update KPI Stats based on the global data
+        // Only run if the caller did not pass allData natively, but since we are modifying renderHeatmap
+        // we can just call it passing the allData var directly.
+        updateSeasonalStats(allData);
 
         if (mode === 'year') {
             container.innerHTML = '';
@@ -1040,11 +1410,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     const dateKey = `${y}-${mo}-${dayStr}`;
                     const val = dataMap[dateKey] || 0;
 
-                    html += `<div class="w-full pt-[100%] rounded-[3px] sm:rounded-md ${getColor(val)} transition-all hover:scale-125 hover:z-10 hover:shadow-md cursor-pointer relative group"
+                    const interactivityClass = val > 0 ? "hover:scale-110 hover:z-10 hover:shadow-md cursor-pointer" : "pointer-events-none opacity-50";
+
+                    html += `<div class="w-full pt-[100%] rounded-[3px] sm:rounded-md ${getColor(val)} transition-all duration-300 ${interactivityClass} relative group"
                                     onmouseenter="showHeatmapTooltip(event, '${dateKey}', ${val})"
                                     onmousemove="moveHeatmapTooltip(event)"
-                                    onmouseleave="hideHeatmapTooltip()">
-                                    <div class="absolute inset-0"></div>    
+                                    onmouseleave="hideHeatmapTooltip()"
+                                    onclick="openHeatmapDrillDown('${dateKey}')">
                             </div>`;
                 }
 
@@ -1076,10 +1448,13 @@ document.addEventListener("DOMContentLoaded", function () {
                     const dateKey = `${targetYear}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const val = dataMap[dateKey] || 0;
 
-                    calHTML += `<div class="w-5 h-5 flex items-center justify-center text-[9px] rounded-md ${getColor(val)} ${val > 0 && maxVal > 0 && (val - minVal) / (maxVal - minVal) > 0.5 ? 'text-white' : 'text-slate-600'} cursor-pointer hover:scale-110 transition-transform" 
+                    const interactivityClass = val > 0 ? "cursor-pointer hover:scale-105" : "pointer-events-none opacity-50";
+
+                    calHTML += `<div class="w-5 h-5 flex items-center justify-center text-[9px] rounded-md ${getColor(val)} ${val > 0 && maxVal > 0 && (val - minVal) / (maxVal - minVal) > 0.5 ? 'text-white' : 'text-slate-600'} transition-transform duration-300 ${interactivityClass}" 
                                     onmouseenter="showHeatmapTooltip(event, '${dateKey}', ${val})"
                                     onmousemove="moveHeatmapTooltip(event)"
-                                    onmouseleave="hideHeatmapTooltip()">${d}</div>`;
+                                    onmouseleave="hideHeatmapTooltip()"
+                                    onclick="openHeatmapDrillDown('${dateKey}')">${d}</div>`;
                 }
                 calHTML += `</div></div>`;
                 monthContainer.innerHTML += calHTML;
@@ -1168,25 +1543,14 @@ document.addEventListener("DOMContentLoaded", function () {
         });
     }
 
-    const globalYearSelect = document.getElementById('globalYearSelect');
-    const globalCompareSelect = document.getElementById('globalCompareSelect');
-
     const updateGlobalKPIs = () => {
-        if (globalYearSelect) {
-            // Trigger renderHeatmap to recalculate stats quietly or call updateSeasonalStats directly
-            // In this architecture, calling renderHeatmap with Heatmap's current year will trigger KPI updates 
-            // since we modified renderHeatmap to look at the global selects.
-            const hmYear = heatmapSingleSelect ? heatmapSingleSelect.value : new Date().getFullYear();
-            renderHeatmap(hmYear, 'year');
-        }
+        updateSeasonalStats(data.heatmapData || []);
     };
 
-    if (globalYearSelect) {
-        globalYearSelect.addEventListener('change', updateGlobalKPIs);
-    }
-    if (globalCompareSelect) {
-        globalCompareSelect.addEventListener('change', updateGlobalKPIs);
-    }
+    ['kpiMonth1', 'kpiYear1', 'kpiMonth2', 'kpiYear2'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('change', updateGlobalKPIs);
+    });
 
     // Initial Render
     // Since the Heatmap toggle button isn't needed anymore, let's just make sure
