@@ -746,62 +746,10 @@ document.addEventListener("DOMContentLoaded", function () {
         document.getElementById('modalDayName').innerText = `${dayName}, ${dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}`;
         document.getElementById('modalSubtitle').innerHTML = `Estimasi pergerakan rinci berdasarkan tanggal spesifik: <strong class="text-indigo-600">${dateObj.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</strong>`;
 
-        // Curve Shifting Math (Replica of DashboardService.php)
-        const weekdayProfile = [1, 1, 1, 1, 2, 5, 15, 20, 18, 12, 10, 10, 10, 11, 12, 16, 18, 15, 10, 8, 6, 4, 3, 2];
-        const weekendProfile = [2, 1, 1, 1, 2, 4, 8, 12, 15, 18, 20, 20, 19, 18, 16, 14, 12, 10, 8, 6, 5, 4, 3, 2];
-
-        const isWeekend = (dateObj.getDay() === 0 || dateObj.getDay() === 6);
-        const baseProfile = isWeekend ? weekendProfile : weekdayProfile;
-
-        const baseMaxWeight = Math.max(...baseProfile);
-        const baseMaxHour = baseProfile.indexOf(baseMaxWeight);
-        const peakHour = d.peak_hour || 0;
-        const shift = peakHour - baseMaxHour;
-
-        let shiftedProfile = [];
-        for (let h = 0; h < 24; h++) {
-            let sourceH = (h - shift + 24) % 24;
-            shiftedProfile[h] = baseProfile[sourceH];
-        }
-
-        let profileData = new Array(24).fill(0);
-        profileData[peakHour] = d.peak_count;
-
-        let remainingTotal = d.value - d.peak_count;
-        if (remainingTotal < 0) {
-            remainingTotal = 0;
-            profileData[peakHour] = d.value;
-        }
-
-        const weightSumWithoutPeak = shiftedProfile.reduce((a, b) => a + b, 0) - shiftedProfile[peakHour];
-
-        if (weightSumWithoutPeak > 0 && remainingTotal > 0) {
-            let accumulated = 0;
-            for (let h = 0; h < 24; h++) {
-                if (h !== peakHour) {
-                    let val = Math.round((shiftedProfile[h] / weightSumWithoutPeak) * remainingTotal);
-                    profileData[h] = val;
-                    accumulated += val;
-                }
-            }
-
-            let diff = Math.floor(remainingTotal - accumulated);
-            if (diff !== 0) {
-                let sortedIndices = shiftedProfile.map((w, i) => ({ w, i })).sort((a, b) => b.w - a.w);
-                while (diff !== 0) {
-                    let changed = false;
-                    for (let i = 0; i < sortedIndices.length; i++) {
-                        let h = sortedIndices[i].i;
-                        if (h !== peakHour) {
-                            if (diff > 0) { profileData[h]++; diff--; changed = true; }
-                            else if (diff < 0 && profileData[h] > 0) { profileData[h]--; diff++; changed = true; }
-                            if (diff === 0) break;
-                        }
-                    }
-                    if (!changed) break;
-                }
-            }
-        }
+        // Use Actual Hourly Data from the Database
+        let profileData = d.hourly_data || new Array(24).fill(0);
+        let peakHour = profileData.indexOf(Math.max(...profileData));
+        if (peakHour === -1 || Math.max(...profileData) === 0) peakHour = d.peak_hour || 0; // Fallback to DB peak hour if array is empty
 
         // Modal Rendering Mapping
         const totalDaily = d.value;
@@ -863,7 +811,19 @@ document.addEventListener("DOMContentLoaded", function () {
             { name: 'Malam', val: volMalam }
         ];
         const maxPeriod = periods.reduce((prev, current) => (prev.val > current.val) ? prev : current);
-        document.getElementById('modalInsightText').innerHTML = `Trafik terpadat terjadi pada <span class="font-bold text-slate-700">${maxPeriod.name} hari</span> dengan total ${maxPeriod.val} pergerakan.`;
+
+        // Fill Modal Note Form
+        const noteInput = document.getElementById('modalInsightInput');
+        const noteDate = document.getElementById('modalInsightDate');
+        const noteBranch = document.getElementById('modalInsightBranch');
+        const noteStatus = document.getElementById('saveNoteStatus');
+
+        if (noteInput && noteDate && noteBranch) {
+            noteDate.value = d.date; // Use specific current date
+            noteBranch.value = d.branch_code || ''; // Fallback to avoid null
+            noteInput.value = d.note || ''; // Default to empty instead of auto generated text
+            if (noteStatus) noteStatus.classList.add('opacity-0'); // Hide success msg on open
+        }
 
         const ctxDD = document.getElementById('drillDownChart').getContext('2d');
         if (drillDownChartInstance) drillDownChartInstance.destroy();
@@ -1558,3 +1518,61 @@ document.addEventListener("DOMContentLoaded", function () {
     const initHmYear = heatmapSingleSelect ? heatmapSingleSelect.value : new Date().getFullYear();
     renderHeatmap(initHmYear, 'year');
 });
+
+// Global Function to Save Note from Modal using AJAX
+window.saveHeatmapNote = function () {
+    const noteInput = document.getElementById('modalInsightInput');
+    const noteDate = document.getElementById('modalInsightDate');
+    const noteBranch = document.getElementById('modalInsightBranch');
+    const noteBtn = document.getElementById('saveNoteBtn');
+    const noteStatus = document.getElementById('saveNoteStatus');
+
+    if (!noteInput || !noteDate || !noteBranch) return;
+
+    noteBtn.disabled = true;
+    noteBtn.innerHTML = '<span class="animate-spin mr-1">↻</span> Simpan';
+
+    const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfTokenMeta ? csrfTokenMeta.getAttribute('content') : '';
+
+    fetch('/dashboard/notes', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            date: noteDate.value,
+            branch_code: noteBranch.value,
+            note: noteInput.value
+        })
+    })
+        .then(res => res.json())
+        .then(response => {
+            noteBtn.disabled = false;
+            noteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586L7.707 10.293z"/></svg> Simpan';
+
+            if (response.success) {
+                if (noteStatus) {
+                    noteStatus.classList.remove('opacity-0');
+                    setTimeout(() => { noteStatus.classList.add('opacity-0'); }, 3000);
+                }
+
+                // Update the global data array so if they close and reopen, the note persists without reload
+                const dStr = noteDate.value;
+                if (window.DashboardData && window.DashboardData.heatmapData) {
+                    const currentD = window.DashboardData.heatmapData.find(x => x.date === dStr);
+                    if (currentD) currentD.note = noteInput.value;
+                }
+            }
+        })
+        .catch(err => {
+            console.error('Error saving note:', err);
+            noteBtn.disabled = false;
+            noteBtn.innerHTML = 'Gagal...';
+            setTimeout(() => {
+                noteBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586L7.707 10.293z"/></svg> Simpan';
+            }, 2000);
+        });
+};

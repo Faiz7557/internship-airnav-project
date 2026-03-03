@@ -5,6 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\DashboardFilterRequest;
 use App\Models\DailyFlightStat;
+use App\Models\DailyNote; // Added this import
+use App\Models\Cabang; // Added this import
+use App\Models\Event; // Added this import
+use App\Services\DashboardService; // Added this import
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +23,14 @@ class DashboardController extends Controller
         
         $reqYear = $request->filled('year') ? $request->integer('year') : null;
         $reqMonth = $request->filled('month') ? $request->integer('month') : null;
+        $reqBranch = $request->filled('branch') ? $request->input('branch') : null;
+
+        $cabangs = \App\Models\Cabang::all();
+
+        if ($reqBranch) {
+            $query->where('branch_code', $reqBranch);
+            $isFiltered = true;
+        }
 
         // Fallback: If only Month is selected without Year, safely default to the latest existing year.
         if ($reqMonth && !$reqYear) {
@@ -52,12 +64,15 @@ class DashboardController extends Controller
         $dailyStats = $query->orderBy('date')->get();
 
         // Available Filter Options
-        $availableDates = DailyFlightStat::select(DB::raw('YEAR(date) as year, MONTH(date) as month'))
+        $datesQuery = DailyFlightStat::select(DB::raw('YEAR(date) as year, MONTH(date) as month'))
             ->distinct()
             ->orderBy('year', 'desc')
-            ->orderBy('month', 'desc')
-            ->get()
-            ->groupBy('year');
+            ->orderBy('month', 'desc');
+            
+        if ($reqBranch) {
+            $datesQuery->where('branch_code', $reqBranch);
+        }
+        $availableDates = $datesQuery->get()->groupBy('year');
 
         // Data Range for Visualization based on filtered data
         $minDate = $dailyStats->min('date');
@@ -72,7 +87,11 @@ class DashboardController extends Controller
         $events = [];
         foreach ($rawEvents as $ev) {
             // Calculate Stats for each event
-            $stats = DailyFlightStat::whereBetween('date', [$ev->start_date, $ev->end_date])->get();
+            $statsQuery = DailyFlightStat::whereBetween('date', [$ev->start_date, $ev->end_date]);
+            if ($reqBranch) {
+                $statsQuery->where('branch_code', $reqBranch);
+            }
+            $stats = $statsQuery->get();
             
             if ($stats->count() > 0) {
                 // Calculation Logic
@@ -306,16 +325,28 @@ class DashboardController extends Controller
             $prevYear = $year - 1;
             if ($month) {
                 // Compare Same Month Last Year
-                $previousTotal = DailyFlightStat::whereMonth('date', $month)->whereYear('date', $prevYear)->sum('total_flights');
+                $prevQuery = DailyFlightStat::whereMonth('date', $month)->whereYear('date', $prevYear);
+                if ($reqBranch) $prevQuery->where('branch_code', $reqBranch);
+                $previousTotal = $prevQuery->sum('total_flights');
             } else {
                 // Compare Same Year Last Year
-                $previousTotal = DailyFlightStat::whereYear('date', $prevYear)->sum('total_flights');
+                $prevQuery = DailyFlightStat::whereYear('date', $prevYear);
+                if ($reqBranch) $prevQuery->where('branch_code', $reqBranch);
+                $previousTotal = $prevQuery->sum('total_flights');
             }
         } else {
             // All Time View: Compare Latest Full Year vs Previous Year
-            $maxYearInDB = DailyFlightStat::max(DB::raw('YEAR(date)')) ?? Carbon::now()->year;
-            $currYearTotal = DailyFlightStat::whereYear('date', $maxYearInDB)->sum('total_flights');
-            $previousTotal = DailyFlightStat::whereYear('date', $maxYearInDB - 1)->sum('total_flights');
+            $maxYearQuery = DailyFlightStat::query();
+            if ($reqBranch) $maxYearQuery->where('branch_code', $reqBranch);
+            $maxYearInDB = $maxYearQuery->max(DB::raw('YEAR(date)')) ?? Carbon::now()->year;
+
+            $currQuery = DailyFlightStat::whereYear('date', $maxYearInDB);
+            if ($reqBranch) $currQuery->where('branch_code', $reqBranch);
+            $currYearTotal = $currQuery->sum('total_flights');
+
+            $prevQuery = DailyFlightStat::whereYear('date', $maxYearInDB - 1);
+            if ($reqBranch) $prevQuery->where('branch_code', $reqBranch);
+            $previousTotal = $prevQuery->sum('total_flights');
             
             // Override displayed Total to show meaningful "Current Performance" instead of All Time Sum
             // Only update the $totalFlights variable if we want the KPI card to show "This Year" instead of "All Time"
@@ -335,10 +366,33 @@ class DashboardController extends Controller
 
         // 10. HEATMAP DATA (Full History for Client-Side Filtering)
         // Fetch all daily stats to allow dynamic year switching on frontend
-        $heatmapData = DailyFlightStat::select('date', 'total_flights', 'peak_hour_count', 'peak_hour', 'dom_arr', 'dom_dep', 'int_arr', 'int_dep', 'training_arr', 'training_dep')
-            ->orderBy('date')
+        
+        // Eager load RawFlightData to avoid N+1 queries by prefetching all dates
+        $rawQuery = \App\Models\RawFlightData::query();
+        if ($reqBranch) $rawQuery->where('kode_cabang', $reqBranch);
+        $allRawData = $rawQuery->get()->keyBy('date');
+        
+        $heatmapQuery = DailyFlightStat::select('date', 'total_flights', 'peak_hour_count', 'peak_hour', 'dom_arr', 'dom_dep', 'int_arr', 'int_dep', 'training_arr', 'training_dep');
+        if ($reqBranch) $heatmapQuery->where('branch_code', $reqBranch);
+        
+        // Fetch Notes
+        $notesQuery = DailyNote::query();
+        if ($reqBranch) $notesQuery->where('branch_code', $reqBranch);
+        $allNotes = $notesQuery->get()->keyBy('date');
+
+        $heatmapData = $heatmapQuery->orderBy('date')
             ->get()
-            ->map(function($item) {
+            ->map(function($item) use ($allRawData, $allNotes, $reqBranch) {
+                // Fetch the actual hourly array for this specific date
+                $rawRecord = $allRawData->get($item->date);
+                $hourlyArray = array_fill(0, 24, 0);
+                if ($rawRecord) {
+                    for ($h = 0; $h < 24; $h++) {
+                        $hourCol = 'h' . str_pad($h, 2, '0', STR_PAD_LEFT);
+                        $hourlyArray[$h] = (int) $rawRecord->{$hourCol};
+                    }
+                }
+
                 return [
                     'date' => $item->date, // YYYY-MM-DD
                     'value' => $item->total_flights,
@@ -348,7 +402,10 @@ class DashboardController extends Controller
                     'int' => $item->int_arr + $item->int_dep,
                     'training' => $item->training_arr + $item->training_dep,
                     'year' => Carbon::parse($item->date)->year, // Helper for JS filtering
-                    'month' => Carbon::parse($item->date)->month // Helper for JS filtering
+                    'month' => Carbon::parse($item->date)->month, // Helper for JS filtering
+                    'hourly_data' => $hourlyArray, // Actual data for drill-down
+                    'note' => $allNotes->has($item->date) ? $allNotes->get($item->date)->note : '',
+                    'branch_code' => $reqBranch ?? 'WARR' // Default to Surabaya if global
                 ];
             });
 
@@ -385,18 +442,36 @@ class DashboardController extends Controller
         $prevYear = $targetYear - 1;
 
         // A. Total Flights
-        $totalCurrentYear = DailyFlightStat::whereYear('date', $targetYear)->sum('total_flights');
-        $totalPrevYear    = DailyFlightStat::whereYear('date', $prevYear)->sum('total_flights');
+        $currentYearQuery = DailyFlightStat::whereYear('date', $targetYear);
+        if ($reqBranch) $currentYearQuery->where('branch_code', $reqBranch);
+        $totalCurrentYear = $currentYearQuery->sum('total_flights');
+
+        $prevYearQuery = DailyFlightStat::whereYear('date', $prevYear);
+        if ($reqBranch) $prevYearQuery->where('branch_code', $reqBranch);
+        $totalPrevYear = $prevYearQuery->sum('total_flights');
+        
         $growthTotal      = ($totalPrevYear > 0) ? round((($totalCurrentYear - $totalPrevYear) / $totalPrevYear) * 100, 1) : ($totalCurrentYear > 0 ? 100 : 0);
 
         // B. Peak Day Traffic
-        $peakDayCurrent = DailyFlightStat::whereYear('date', $targetYear)->max('total_flights') ?? 0;
-        $peakDayPrev    = DailyFlightStat::whereYear('date', $prevYear)->max('total_flights') ?? 0;
+        $peakDayCurrentQuery = DailyFlightStat::whereYear('date', $targetYear);
+        if ($reqBranch) $peakDayCurrentQuery->where('branch_code', $reqBranch);
+        $peakDayCurrent = $peakDayCurrentQuery->max('total_flights') ?? 0;
+
+        $peakDayPrevQuery = DailyFlightStat::whereYear('date', $prevYear);
+        if ($reqBranch) $peakDayPrevQuery->where('branch_code', $reqBranch);
+        $peakDayPrev = $peakDayPrevQuery->max('total_flights') ?? 0;
+        
         $growthPeak     = ($peakDayPrev > 0) ? round((($peakDayCurrent - $peakDayPrev) / $peakDayPrev) * 100, 1) : ($peakDayCurrent > 0 ? 100 : 0);
 
         // C. Average Daily Flights
-        $avgCurrent = DailyFlightStat::whereYear('date', $targetYear)->avg('total_flights') ?? 0;
-        $avgPrev    = DailyFlightStat::whereYear('date', $prevYear)->avg('total_flights') ?? 0;
+        $avgCurrentQuery = DailyFlightStat::whereYear('date', $targetYear);
+        if ($reqBranch) $avgCurrentQuery->where('branch_code', $reqBranch);
+        $avgCurrent = $avgCurrentQuery->avg('total_flights') ?? 0;
+
+        $avgPrevQuery = DailyFlightStat::whereYear('date', $prevYear);
+        if ($reqBranch) $avgPrevQuery->where('branch_code', $reqBranch);
+        $avgPrev = $avgPrevQuery->avg('total_flights') ?? 0;
+        
         $growthAvg  = ($avgPrev > 0) ? round((($avgCurrent - $avgPrev) / $avgPrev) * 100, 1) : ($avgCurrent > 0 ? 100 : 0);
 
         // Bug 1 Fix: Calculate MoM Stats for comparison cards
@@ -404,8 +479,10 @@ class DashboardController extends Controller
         $momStats = ['current_peak' => 0, 'peak_growth' => 0, 'current_avg' => 0, 'avg_growth' => 0];
         if ($isFiltered && $month && $year) {
             $prevMonthDate  = Carbon::create($year, $month, 1)->subMonth();
-            $prevMonthStats = DailyFlightStat::whereYear('date', $prevMonthDate->year)
-                ->whereMonth('date', $prevMonthDate->month)->get();
+            $prevMonthQuery = DailyFlightStat::whereYear('date', $prevMonthDate->year)
+                ->whereMonth('date', $prevMonthDate->month);
+            if ($reqBranch) $prevMonthQuery->where('branch_code', $reqBranch);
+            $prevMonthStats = $prevMonthQuery->get();
 
             $currentPeak = $dailyStats->max('peak_hour_count') ?? 0;
             $prevPeak    = $prevMonthStats->max('peak_hour_count') ?? 0;
@@ -421,15 +498,21 @@ class DashboardController extends Controller
         } else {
             // Unfiltered or Year-Only: compare latest month in DB vs previous month
             // If Year-only, grab the latest month in that specific year. If unfiltered, grab the absolute latest month.
-            $latestDate = $isFiltered ? DailyFlightStat::whereYear('date', $year)->max('date') : DailyFlightStat::max('date');
+            $latestDateQuery = $isFiltered ? DailyFlightStat::whereYear('date', $year) : DailyFlightStat::query();
+            if ($reqBranch) $latestDateQuery->where('branch_code', $reqBranch);
+            $latestDate = $latestDateQuery->max('date');
             
             if ($latestDate) {
                 $latestCarbon   = Carbon::parse($latestDate);
                 $prevMonthDate  = $latestCarbon->copy()->subMonth();
-                $currMonthStats = DailyFlightStat::whereYear('date', $latestCarbon->year)
-                    ->whereMonth('date', $latestCarbon->month)->get();
-                $prevMonthStats = DailyFlightStat::whereYear('date', $prevMonthDate->year)
-                    ->whereMonth('date', $prevMonthDate->month)->get();
+                
+                $currMonthQuery = DailyFlightStat::whereYear('date', $latestCarbon->year)->whereMonth('date', $latestCarbon->month);
+                if ($reqBranch) $currMonthQuery->where('branch_code', $reqBranch);
+                $currMonthStats = $currMonthQuery->get();
+                
+                $prevMonthQuery = DailyFlightStat::whereYear('date', $prevMonthDate->year)->whereMonth('date', $prevMonthDate->month);
+                if ($reqBranch) $prevMonthQuery->where('branch_code', $reqBranch);
+                $prevMonthStats = $prevMonthQuery->get();
 
                 $currentPeak = $currMonthStats->max('peak_hour_count') ?? 0;
                 $prevPeak    = $prevMonthStats->max('peak_hour_count') ?? 0;
@@ -446,7 +529,7 @@ class DashboardController extends Controller
         }
 
         return view('dashboard', compact(
-            'month', 'year', 'availableDates', 'isFiltered', 'dataRange', 'labelType',
+            'month', 'year', 'cabangs', 'reqBranch', 'availableDates', 'isFiltered', 'dataRange', 'labelType',
             'totalFlights', 'avgDailyFlights', 'busiestDay', 'highestPeak',
             'chartTrend', 'chartCategory', 'peakHourfreq', 'dayLabels', 'dayOfWeekData', 'chartArrDep', 'yearlyComparison',
             'capacityUtilization', 'growthPercentage', 'trainingImpact',
@@ -462,5 +545,20 @@ class DashboardController extends Controller
             'momStats'
         ));
     }
-}
 
+    public function saveNote(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'branch_code' => 'required|string',
+            'note' => 'nullable|string'
+        ]);
+
+        DailyNote::updateOrCreate(
+            ['date' => $request->date, 'branch_code' => $request->branch_code],
+            ['note' => $request->note]
+        );
+
+        return response()->json(['success' => true, 'message' => 'Catatan berhasil disimpan']);
+    }
+}

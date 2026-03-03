@@ -84,125 +84,61 @@ class DashboardService
     }
 
     /**
-     * Generate Hourly Profiles using Smart Estimation
+     * Generate Hourly Profiles using Actual Data from RawFlightData
      */
     public function generateHourlyProfiles($dailyStats)
     {
-        $dailyProfiles = [];
-        foreach ($dailyStats as $stat) {
-            $dayNum = Carbon::parse($stat->date)->dayOfWeekIso; // 1-7
-
-            if (!isset($dailyProfiles[$dayNum])) {
-                $dailyProfiles[$dayNum] = [
-                    'total_flights' => 0,
-                    'peak_count' => 0,
-                    'count' => 0,
-                    'peak_hours' => []
-                ];
-            }
-            $dailyProfiles[$dayNum]['total_flights'] += $stat->total_flights;
-            $dailyProfiles[$dayNum]['peak_count'] += $stat->peak_hour_count;
-            
-            // Peak Hour berada dalam UTC 0 (sesuai request)
-            $hourInt = $stat->peak_hour ? (int)substr($stat->peak_hour, 0, 2) : 0;
-            $dailyProfiles[$dayNum]['peak_hours'][] = $hourInt;
-
-            $dailyProfiles[$dayNum]['count']++;
-        }
-
-        // Standard Profiles
-        $weekdayProfile = [
-            0=>1, 1=>1, 2=>1, 3=>1, 4=>2, 5=>5, 
-            6=>15, 7=>20, 8=>18, 9=>12, 10=>10, 11=>10, 
-            12=>10, 13=>11, 14=>12, 15=>16, 16=>18, 17=>15, 
-            18=>10, 19=>8, 20=>6, 21=>4, 22=>3, 23=>2
-        ];
-        $weekendProfile = [
-            0=>2, 1=>1, 2=>1, 3=>1, 4=>2, 5=>4, 
-            6=>8, 7=>12, 8=>15, 9=>18, 10=>20, 11=>20, 
-            12=>19, 13=>18, 14=>16, 15=>14, 16=>12, 17=>10, 
-            18=>8, 19=>6, 20=>5, 21=>4, 22=>3, 23=>2
-        ];
-
         $hourlyProfiles = [];
+        
+        // Initialize the structure with 24 hours of 0s for each day of the week
+        // 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat, 7=Sun
         for ($i = 1; $i <= 7; $i++) {
-            $profileStats = $dailyProfiles[$i] ?? ['total_flights' => 0, 'peak_count' => 0, 'count' => 0, 'peak_hours' => []];
-            
-            if ($profileStats['count'] == 0) {
-                $hourlyProfiles[$i] = array_fill(0, 24, 0);
-                continue;
-            }
-
-            $avgTotal = round($profileStats['total_flights'] / $profileStats['count']);
-            $avgPeakVal = round($profileStats['peak_count'] / $profileStats['count']);
-            
-            // Menggunakan Modus (Nilai yang paling sering muncul) untuk menghindari bug timezone wrap-around saat dirata-ratakan
-            $counts = array_count_values($profileStats['peak_hours']);
-            arsort($counts);
-            $avgPeakHour = key($counts);
-
-            $baseProfile = ($i >= 6) ? $weekendProfile : $weekdayProfile;
-            
-            // Shift
-            $baseMaxWeight = max($baseProfile);
-            $baseMaxHour = array_search($baseMaxWeight, $baseProfile);
-            $shift = $avgPeakHour - $baseMaxHour;
-
-            $shiftedProfile = [];
-            for ($h = 0; $h < 24; $h++) {
-                $sourceH = ($h - $shift + 24) % 24;
-                $shiftedProfile[$h] = $baseProfile[$sourceH];
-            }
-
-            // Scale & Distribution mathematically logic fix
-            $finalProfile = array_fill(0, 24, 0);
-            $finalProfile[$avgPeakHour] = $avgPeakVal;
-            
-            $remainingTotal = $avgTotal - $avgPeakVal;
-            if ($remainingTotal < 0) {
-                $remainingTotal = 0;
-                $finalProfile[$avgPeakHour] = $avgTotal; // Clamping
-            }
-            
-            $weightSumWithoutPeak = array_sum($shiftedProfile) - $shiftedProfile[$avgPeakHour];
-            
-            if ($weightSumWithoutPeak > 0 && $remainingTotal > 0) {
-                $accumulated = 0;
-                foreach ($shiftedProfile as $h => $w) {
-                    if ($h !== $avgPeakHour) {
-                        $val = round(($w / $weightSumWithoutPeak) * $remainingTotal);
-                        $finalProfile[$h] = $val;
-                        $accumulated += $val;
-                    }
-                }
-                
-                // Distribusi sisa pembulatan agar totalnya sama persis dengan $avgTotal
-                $diff = (int) ($remainingTotal - $accumulated);
-                if ($diff !== 0) {
-                    arsort($shiftedProfile);
-                    while ($diff !== 0) {
-                        $changed = false;
-                        foreach ($shiftedProfile as $h => $w) {
-                            if ($h !== $avgPeakHour) {
-                                if ($diff > 0) {
-                                    $finalProfile[$h]++;
-                                    $diff--;
-                                    $changed = true;
-                                } elseif ($diff < 0 && $finalProfile[$h] > 0) {
-                                    $finalProfile[$h]--;
-                                    $diff++;
-                                    $changed = true;
-                                }
-                                if ($diff === 0) break;
-                            }
-                        }
-                        if (!$changed) break; // Break jika tidak ada perubahan agar tidak infinite loop
-                    }
-                }
-            }
-            $hourlyProfiles[$i] = $finalProfile;
+            $hourlyProfiles[$i] = [
+                'total_hours' => array_fill(0, 24, 0),
+                'day_count' => 0
+            ];
         }
-        return $hourlyProfiles;
+
+        // Get the specific dates we are filtering by
+        $dates = $dailyStats->pluck('date')->toArray();
+        if (empty($dates)) {
+            // Return empty profile layout if no dates exist
+            $emptyProfiles = [];
+            for ($i = 1; $i <= 7; $i++) {
+                $emptyProfiles[$i] = array_fill(0, 24, 0);
+            }
+            return $emptyProfiles;
+        }
+        
+        // Fetch actual hourly data directly from RawFlightData
+        $rawRecords = \App\Models\RawFlightData::whereIn('date', $dates)->get();
+
+        foreach ($rawRecords as $record) {
+            $dayNum = Carbon::parse($record->date)->dayOfWeekIso; // 1-7
+            $hourlyProfiles[$dayNum]['day_count']++;
+
+            for ($h = 0; $h < 24; $h++) {
+                $hourCol = 'h' . str_pad($h, 2, '0', STR_PAD_LEFT);
+                $hourlyProfiles[$dayNum]['total_hours'][$h] += (int) $record->{$hourCol};
+            }
+        }
+
+        // Calculate Average and Format for Return
+        $finalProfiles = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $count = $hourlyProfiles[$i]['day_count'];
+            $averageHours = array_fill(0, 24, 0);
+            
+            if ($count > 0) {
+                for ($h = 0; $h < 24; $h++) {
+                    // Average it out and round to nearest whole flight representation
+                    $averageHours[$h] = (int) round($hourlyProfiles[$i]['total_hours'][$h] / $count);
+                }
+            }
+            $finalProfiles[$i] = $averageHours;
+        }
+
+        return $finalProfiles;
     }
 
     /**

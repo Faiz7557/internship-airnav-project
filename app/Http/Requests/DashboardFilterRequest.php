@@ -25,6 +25,7 @@ class DashboardFilterRequest extends FormRequest
             'year' => ['nullable', 'integer', 'min:2000', 'max:2099'],
             'month' => ['nullable', 'integer', 'min:1', 'max:12'],
             'mode' => ['nullable', 'string', 'in:daily,monthly'],
+            'branch' => ['nullable', 'string', 'exists:cabangs,kode_cabang'],
         ];
     }
     

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="overflow-x-hidden overflow-y-auto w-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +7,15 @@
     <script src="{{ asset('js/libs/tailwindcss.js') }}"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style type="text/tailwindcss">
-        body { font-family: 'Poppins', sans-serif; overflow-x: hidden; }
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            overflow-x: hidden; 
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        body::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
         /* Fail-Safe Marker: Red Line */
         body::before {
             content: "";
@@ -79,7 +87,7 @@
     </style>
 </head>
 
-<body class="bg-slate-50 min-h-screen relative overflow-x-hidden text-slate-800">
+<body class="bg-slate-50 min-h-screen font-sans antialiased overflow-x-hidden w-full m-0 p-0 text-slate-800">
 
     <!-- Ambient Background -->
     <div class="ambient-light">
@@ -122,13 +130,19 @@
                 @if(isset($isFiltered) && $isFiltered)
                     <span class="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" /></svg>
-                        Filter: {{ $month ? date('F', mktime(0, 0, 0, $month, 10)) . ' ' : '' }}{{ $year }}
+                        Filter: 
+                        @if(isset($reqBranch) && $reqBranch)
+                            {{ $cabangs->firstWhere('kode_cabang', $reqBranch)->nama }} - 
+                        @endif
+                        {{ $month ? date('F', mktime(0, 0, 0, $month, 10)) . ' ' : '' }}{{ $year }}
                     </span>
                 @endif
             </div>
 
             <!-- Filter Form -->
             <form action="{{ route('dashboard') }}" method="GET" class="glass-card p-1.5 rounded-2xl flex items-center gap-2 border border-white/50 shadow-sm relative z-20">
+
+
                 <div class="relative group">
                     <select name="month" class="appearance-none bg-transparent text-sm font-bold text-slate-600 focus:outline-none cursor-pointer hover:text-[#1F3C88] py-2 pl-4 pr-8 rounded-xl transition-colors">
                         <option value="">Bulan</option>
@@ -157,11 +171,40 @@
                     </div>
                 </div>
 
+                <div class="w-px h-6 bg-slate-200"></div>
+
+                <!-- Branch Dropdown -->
+                <div class="relative group">
+                    <select name="branch" class="appearance-none bg-transparent text-sm font-bold text-slate-600 focus:outline-none cursor-pointer hover:text-[#1F3C88] py-2 pl-4 pr-8 rounded-xl transition-colors">
+                        <option value="">-- Semua Cabang --</option>
+                        @foreach($cabangs as $cabang)
+                            <option value="{{ $cabang->kode_cabang }}" {{ (isset($reqBranch) && $reqBranch == $cabang->kode_cabang) ? 'selected' : '' }}>
+                                {{ $cabang->kode_cabang }} - {{ $cabang->nama }}
+                            </option>
+                        @endforeach
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+
                 <button type="submit" class="bg-gradient-to-r from-[#1F3C88] to-blue-700 text-white p-2.5 rounded-xl hover:shadow-lg hover:shadow-blue-900/20 transition-all transform active:scale-95 flex items-center justify-center">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </button>
             </form>
         </div>
+
+        @if(!isset($isFiltered) || !$isFiltered)
+            <div id="empty-state" class="flex flex-col items-center justify-center py-20 text-center animate-fade-in-up mt-8">
+                <div class="w-48 h-48 bg-blue-50 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 text-blue-200" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 00-2 2" />
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-700">Belum ada data ditampilkan</h2>
+                <p class="text-slate-400 mt-2 max-w-md">Silakan lengkapi filter <strong>Bulan, Tahun, dan Cabang</strong> di atas, lalu klik icon cari.</p>
+            </div>
+        @else
 
         <!-- 1. KPI Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -633,7 +676,7 @@
                 <!-- Decorative Glows -->
                 <div class="absolute top-0 right-0 w-64 h-64 bg-rose-100/50 rounded-full blur-3xl -z-10 -mr-16 -mt-16 pointer-events-none"></div>
                 
-                <div class="p-6 relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                <div class="p-6 relative">
                     <!-- Close Button -->
                     <button id="closeModalBtn" class="absolute top-6 right-6 p-2 bg-slate-100/80 rounded-full text-slate-500 hover:bg-rose-100 hover:text-rose-600 transition-colors z-20">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
@@ -773,10 +816,22 @@
                             </div>
                             
                             <div class="mt-8 pt-5 border-t border-slate-200/60 relative z-10">
-                                <div class="bg-white/60 p-3 rounded-xl border border-white shadow-sm">
-                                    <p class="text-xs text-slate-500 italic text-center" id="modalInsightText">
-                                        "Trafik tertinggi terjadi pada jam <span class="font-bold text-[#1F3C88]">07:00</span>."
-                                    </p>
+                                <div class="bg-white/60 p-3 rounded-xl border border-white shadow-sm flex flex-col gap-2 relative">
+                                    <!-- Token for AJAX -->
+                                    <meta name="csrf-token" content="{{ csrf_token() }}">
+                                    <!-- Store original date & branch for saving -->
+                                    <input type="hidden" id="modalInsightDate">
+                                    <input type="hidden" id="modalInsightBranch">
+
+                                    <textarea id="modalInsightInput" rows="2" class="w-full bg-slate-50/50 border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 focus:ring-2 focus:ring-[#1F3C88] focus:border-[#1F3C88] outline-none transition-all resize-none shadow-inner" placeholder="Tambahkan catatan khusus untuk tanggal ini (opsional)..."></textarea>
+                                    
+                                    <div class="flex justify-between items-center mt-1">
+                                        <span id="saveNoteStatus" class="text-[10px] font-medium text-emerald-500 opacity-0 transition-opacity">✔ Tersimpan</span>
+                                        <button type="button" id="saveNoteBtn" onclick="saveHeatmapNote()" class="px-3 py-1.5 bg-[#1F3C88] hover:bg-blue-800 text-white text-[10px] font-bold rounded-lg shadow-sm shadow-blue-900/20 transition-all active:scale-95 flex items-center gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586L7.707 10.293z"/></svg> 
+                                            Simpan
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -911,6 +966,8 @@
             </div>
         </div>
     </div>
+
+    @endif
 
     <!-- Delete Confirmation Modal -->
     <div id="deleteConfirmModal" class="fixed inset-0 z-[110] hidden" role="dialog" aria-modal="true">
