@@ -15,6 +15,7 @@ use App\Http\Controllers\CabangController;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard/kpi-data', [DashboardController::class, 'getKpiData'])->name('dashboard.kpi.data');
 Route::post('/dashboard/notes', [DashboardController::class, 'saveNote'])->name('dashboard.notes.save');
 
 Route::get('/upload', [UploadController::class, 'index'])->name('upload');

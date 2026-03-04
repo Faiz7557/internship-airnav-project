@@ -140,7 +140,7 @@
             </div>
 
             <!-- Filter Form -->
-            <form action="{{ route('dashboard') }}" method="GET" class="glass-card p-1.5 rounded-2xl flex items-center gap-2 border border-white/50 shadow-sm relative z-20">
+            <form action="{{ route('dashboard') }}" method="GET" class="glass-card p-1.5 rounded-2xl flex items-center overflow-x-auto whitespace-nowrap gap-2 border border-white/50 shadow-sm relative z-20">
 
 
                 <div class="relative group">
@@ -327,17 +327,31 @@
 
                     <!-- Legend -->
                     <div class="mt-auto space-y-3 border-t border-slate-100/50 pt-4 relative z-10">
+                        @php
+                            $domPct = $totalFlights > 0 ? round(($chartCategory['dom'] / $totalFlights) * 100, 1) : 0;
+                            $intPct = $totalFlights > 0 ? round(($chartCategory['int'] / $totalFlights) * 100, 1) : 0;
+                            $trainPct = $totalFlights > 0 ? round(($chartCategory['training'] / $totalFlights) * 100, 1) : 0;
+                        @endphp
                         <div class="flex justify-between text-sm items-center group cursor-default">
                             <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-[#10b981] rounded-full ring-2 ring-emerald-50 group-hover:ring-emerald-100 transition"></span> Domestik</span> 
-                            <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['dom']) }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">{{ $domPct }}%</span>
+                                <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['dom']) }}</span>
+                            </div>
                         </div>
                         <div class="flex justify-between text-sm items-center group cursor-default">
                             <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-[#f59e0b] rounded-full ring-2 ring-amber-50 group-hover:ring-amber-100 transition"></span> Internasional</span> 
-                            <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['int']) }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">{{ $intPct }}%</span>
+                                <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['int']) }}</span>
+                            </div>
                         </div>
                         <div class="flex justify-between text-sm items-center group cursor-default">
                             <span class="flex items-center gap-2 text-slate-600 font-medium text-xs uppercase tracking-wider"><span class="w-2 h-2 bg-purple-500 rounded-full ring-2 ring-purple-50 group-hover:ring-purple-100 transition"></span> Training</span> 
-                            <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['training']) }}</span>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">{{ $trainPct }}%</span>
+                                <span class="font-bold text-slate-700 bg-slate-50 px-2 py-0.5 rounded font-outfit">{{ number_format($chartCategory['training']) }}</span>
+                            </div>
                         </div>
                     </div>
                 </x-chart-card>
@@ -464,7 +478,7 @@
         </h3>
 
         <!-- Global KPI Comparison Filters -->
-        <div class="glass-card p-1.5 rounded-2xl flex flex-wrap items-center gap-2 border border-white/80 shadow-sm bg-white/50 backdrop-blur-md">
+        <div class="glass-card p-1.5 rounded-2xl flex items-center gap-2 border border-white/80 shadow-sm bg-white/50 backdrop-blur-md overflow-x-auto whitespace-nowrap">
             
             <!-- Periode Utama -->
             <div class="flex items-center gap-1 bg-blue-50/80 rounded-xl px-2 py-1 border border-blue-100/50">
@@ -615,18 +629,31 @@
                     Heatmap Kesibukan
                 </h3>
                 
-                <!-- Single Year Filter for Heatmap -->
-                <div class="glass-card p-1 rounded-xl border border-white/80 shadow-sm bg-white/50 backdrop-blur-md">
-                     <div class="relative group">
-                        <select id="heatmapSingleYearSelect" class="appearance-none bg-transparent text-xs font-bold text-[#1F3C88] focus:outline-none cursor-pointer py-1.5 pl-3 pr-7 hover:text-indigo-600 transition-colors">
-                            @foreach($availableDates as $y => $d)
-                                <option value="{{ $y }}" {{ ($year ?? 2026) == $y ? 'selected' : '' }}>{{ $y }}</option>
-                            @endforeach
-                        </select>
-                         <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1.5 text-blue-400 group-hover:text-indigo-400 transition-colors">
-                            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"></path></svg>
-                        </div>
-                    </div>
+                <div class="flex items-center gap-1 sm:gap-2 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200/60 shadow-sm ml-auto overflow-x-auto whitespace-nowrap">
+                    <!-- Branch Filter -->
+                    <select id="heatmapBranchFilter" class="appearance-none bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer hover:text-[#1F3C88] py-1.5 px-3 rounded-lg transition-colors">
+                        <option value="">-- Semua Cabang --</option>
+                        @foreach($cabangs as $cabang)
+                            <option value="{{ $cabang->kode_cabang }}" {{ (isset($reqBranch) && $reqBranch == $cabang->kode_cabang) ? 'selected' : '' }}>{{ $cabang->nama }}</option>
+                        @endforeach
+                    </select>
+
+                    <div class="w-px h-5 bg-slate-200 flex-shrink-0"></div>
+
+                    <!-- Year Filter -->
+                    <select id="heatmapYearFilter" class="appearance-none bg-transparent text-xs font-bold text-slate-600 focus:outline-none cursor-pointer hover:text-[#1F3C88] py-1.5 px-3 rounded-lg transition-colors">
+                        @foreach($availableDates as $y => $dates)
+                            <option value="{{ $y }}" {{ (isset($year) && $year == $y) ? 'selected' : '' }}>{{ $y }}</option>
+                        @endforeach
+                    </select>
+
+                    <div class="w-px h-5 bg-slate-200 flex-shrink-0"></div>
+
+                    <!-- Apply Button -->
+                    <button onclick="applyHeatmapFilter()" class="flex items-center gap-1.5 bg-[#1F3C88] hover:bg-[#162d6a] text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                        Terapkan
+                    </button>
                 </div>
             </div>
 

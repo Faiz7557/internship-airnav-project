@@ -72,10 +72,9 @@
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-[#1F3C88]">Monthly Summary</h1>
-                <p class="text-slate-500 text-sm">Pilih periode data untuk melihat laporan detail.</p>
+                <p class="text-slate-500 text-sm">Pilih periode untuk laporan detail.</p>
             </div>
-            
-            <div class="flex flex-wrap items-center gap-3 bg-slate-100 p-2 rounded-xl">
+            <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-xl overflow-x-auto whitespace-nowrap">
                 <select id="filterMonth" onchange="updateYearOptions()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[120px]">
                     <option value="" disabled selected>Pilih Bulan</option>
                     @foreach(array_keys($availableDates) as $month)
@@ -97,13 +96,13 @@
                     <span>Tampilkan</span>
                 </button>
 
-                <div class="relative ml-2 border-l border-slate-300 pl-4 flex items-center gap-2">
+                <div id="exportContainer" class="hidden relative ml-2 border-l border-slate-300 pl-4 flex items-center gap-2">
                     
                     <span class="text-xs font-bold text-slate-500 uppercase mr-1">
                         Export
                     </span>
 
-                    <button id="btnExportPDF" disabled type="button" onclick="exportPDF()" class="opacity-50 cursor-not-allowed bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 shadow-sm transition hover:scale-105 focus:ring-2 focus:ring-red-300 flex items-center justify-center" title="Download PDF">
+                    <button id="btnExportPDF" type="button" onclick="exportPDF()" class="bg-red-600 hover:bg-red-700 text-white rounded-lg p-2 shadow-sm transition hover:scale-105 focus:ring-2 focus:ring-red-300 flex items-center justify-center" title="Download PDF">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
@@ -113,7 +112,7 @@
                         </svg>
                     </button>
 
-                    <button id="dropdownExportBtn" disabled type="button" class="opacity-50 cursor-not-allowed bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-sm transition hover:scale-105 focus:ring-2 focus:ring-green-300 flex items-center justify-center" title="Download Excel">
+                    <button id="dropdownExportBtn" type="button" class="bg-green-600 hover:bg-green-700 text-white rounded-lg p-2 shadow-sm transition hover:scale-105 focus:ring-2 focus:ring-green-300 flex items-center justify-center" title="Download Excel">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                             <polyline points="14 2 14 8 20 8"></polyline>
@@ -149,8 +148,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 00-2 2" />
                 </svg>
             </div>
-            <h2 class="text-2xl font-bold text-slate-700">Belum ada data ditampilkan</h2>
-            <p class="text-slate-400 mt-2 max-w-md">Silakan lengkapi filter <strong>Bulan, Tahun, dan Cabang</strong> di atas, lalu klik <strong>Tampilkan</strong>.</p>
+            <h2 id="emptyStateTitle" class="text-2xl font-bold text-slate-700">Belum ada data ditampilkan</h2>
+            <p id="emptyStateDesc" class="text-slate-400 mt-2 max-w-md">Silakan lengkapi filter <strong>Bulan, Tahun, dan Cabang</strong> di atas, lalu klik <strong>Tampilkan</strong>.</p>
         </div>
 
         <div id="loading-state" class="hidden flex flex-col items-center justify-center py-32">
@@ -316,6 +315,10 @@
                 btnShow.disabled = false;
                 btnShow.classList.remove('opacity-50', 'cursor-not-allowed');
             }
+            // Reset empty state text on filter change
+            document.getElementById('emptyStateTitle').innerText = "Belum ada data ditampilkan";
+            document.getElementById('emptyStateDesc').innerHTML = "Silakan lengkapi filter <strong>Bulan, Tahun, dan Cabang</strong> di atas, lalu klik <strong>Tampilkan</strong>.";
+            document.getElementById('exportContainer').classList.add('hidden');
         });
 
         function loadData() {
@@ -344,15 +347,10 @@
             document.getElementById('loading-state').classList.remove('hidden');
             
             const btnShow = document.getElementById('btn-show');
-            const btnExport = document.getElementById('dropdownExportBtn');
-            const btnPDF = document.getElementById('btnExportPDF');
+            document.getElementById('exportContainer').classList.add('hidden');
 
             btnShow.disabled = true;
             btnShow.classList.add('opacity-70');
-            btnExport.disabled = true;
-            btnExport.classList.add('opacity-50', 'cursor-not-allowed');
-            btnPDF.disabled = true;
-            btnPDF.classList.add('opacity-50', 'cursor-not-allowed');
 
             fetch(`{{ route('summary.data') }}?month=${monthVal}&year=${yearVal}&branch_code=${branchVal}`)
                 .then(response => response.json())
@@ -370,13 +368,11 @@
                         dashboard.classList.remove('hidden');
                         setTimeout(() => { dashboard.classList.add('opacity-100'); }, 50);
 
-                        btnExport.disabled = false;
-                        btnExport.classList.remove('opacity-50', 'cursor-not-allowed');
-                        btnPDF.disabled = false;
-                        btnPDF.classList.remove('opacity-50', 'cursor-not-allowed');
+                        document.getElementById('exportContainer').classList.remove('hidden');
 
                     } else {
-                        alert("Data tidak ditemukan.");
+                        document.getElementById('emptyStateTitle').innerText = "Data Tidak Ditemukan";
+                        document.getElementById('emptyStateDesc').innerHTML = "Tidak ada rekaman pergerakan pesawat pada periode tersebut.";
                         document.getElementById('empty-state').classList.remove('hidden');
                     }
                 })

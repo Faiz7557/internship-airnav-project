@@ -546,6 +546,56 @@ class DashboardController extends Controller
         ));
     }
 
+    public function getKpiData(Request $request)
+    {
+        $branch = $request->input('branch');
+        
+        $reqMonth1 = $request->input('month1') === 'all' || !$request->filled('month1') ? null : $request->integer('month1');
+        $reqYear1 = $request->filled('year1') ? $request->integer('year1') : null;
+        
+        $reqMonth2 = $request->input('month2') === 'all' || !$request->filled('month2') ? null : $request->integer('month2');
+        $reqYear2 = $request->filled('year2') ? $request->integer('year2') : null;
+
+        if (!$reqYear1 || !$reqYear2) {
+            return response()->json(['error' => 'Missing compare dates'], 400);
+        }
+
+        $q1 = DailyFlightStat::whereYear('date', $reqYear1);
+        if ($reqMonth1) $q1->whereMonth('date', $reqMonth1);
+        if ($branch) $q1->where('branch_code', $branch);
+        $s1 = $q1->get();
+
+        $total1 = $s1->sum('total_flights');
+        $avg1 = $s1->count() > 0 ? round($s1->avg('total_flights')) : 0;
+        $peakDay1 = $s1->max('total_flights') ?? 0;
+        $peakHour1 = $s1->max('peak_hour_count') ?? 0;
+
+        $q2 = DailyFlightStat::whereYear('date', $reqYear2);
+        if ($reqMonth2) $q2->whereMonth('date', $reqMonth2);
+        if ($branch) $q2->where('branch_code', $branch);
+        $s2 = $q2->get();
+
+        $total2 = $s2->sum('total_flights');
+        $avg2 = $s2->count() > 0 ? round($s2->avg('total_flights')) : 0;
+        $peakDay2 = $s2->max('total_flights') ?? 0;
+        $peakHour2 = $s2->max('peak_hour_count') ?? 0;
+
+        $growthTotal = $total2 > 0 ? round((($total1 - $total2) / $total2) * 100, 1) : ($total1 > 0 ? 100 : 0);
+        $growthAvg = $avg2 > 0 ? round((($avg1 - $avg2) / $avg2) * 100, 1) : ($avg1 > 0 ? 100 : 0);
+        $growthPeakDay = $peakDay2 > 0 ? round((($peakDay1 - $peakDay2) / $peakDay2) * 100, 1) : ($peakDay1 > 0 ? 100 : 0);
+        $growthPeakHour = $peakHour2 > 0 ? round((($peakHour1 - $peakHour2) / $peakHour2) * 100, 1) : ($peakHour1 > 0 ? 100 : 0);
+
+        $monthNames = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',7=>'Jul',8=>'Ags',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'];
+        $n2 = ($reqMonth2 && isset($monthNames[$reqMonth2]) ? $monthNames[$reqMonth2] . ' ' : '') . $reqYear2;
+
+        return response()->json([
+            'total' => [ 'val' => number_format($total1), 'growth' => $growthTotal, 'vs' => "vs " . $n2 ],
+            'avg' => [ 'val' => number_format($avg1), 'growth' => $growthAvg, 'vs' => "vs " . $n2 ],
+            'peakDay' => [ 'val' => number_format($peakDay1), 'growth' => $growthPeakDay, 'vs' => "vs " . $n2 ],
+            'peakHour' => [ 'val' => number_format($peakHour1), 'growth' => $growthPeakHour, 'vs' => "vs " . $n2 ],
+        ]);
+    }
+
     public function saveNote(Request $request)
     {
         $request->validate([

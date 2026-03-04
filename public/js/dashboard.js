@@ -594,7 +594,7 @@ document.addEventListener("DOMContentLoaded", function () {
         const dataRangeLabel = document.getElementById('dataRangeLabel') ? document.getElementById('dataRangeLabel').innerText : '';
         document.getElementById('modalSubtitle').innerHTML = `Estimasi rata-rata pergerakan harian dari: <strong class="text-indigo-600">${dataRangeLabel}</strong>`;
 
-        const profileData = hourlyProfiles[dayIndex + 1] || [];
+        const profileData = data.hourlyProfiles[dayIndex + 1] || [];
 
         const totalDaily = profileData.reduce((a, b) => a + b, 0);
         const peakValue = Math.max(...profileData);
@@ -1297,13 +1297,15 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // --- 4. CALENDAR HEATMAP RENDERER (Dynamic) ---
-    const renderHeatmap = (targetYear, mode = 'year') => {
+    // Store heatmap data globally so applyHeatmapFilter can access it outside the closure
+    window._heatmapData = data.heatmapData || [];
+    const renderHeatmap = (targetYear, mode = 'year', overrideData = null) => {
         const container = document.getElementById('calendarHeatmap');
         const monthContainer = document.getElementById('monthGridContainer');
 
         if (!container) return;
 
-        const allData = data.heatmapData || [];
+        const allData = overrideData !== null ? overrideData : (data.heatmapData || []);
         const yearData = allData.filter(d => d.year == targetYear);
 
         let maxVal = 0;
@@ -1342,7 +1344,14 @@ document.addEventListener("DOMContentLoaded", function () {
             let html = '';
             const monthsNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'];
 
-            for (let m = 0; m < 12; m++) {
+            // Determine if a specific month is selected from the global filter
+            const globalMonthEl = document.querySelector('select[name="month"]');
+            const selectedMonth = (globalMonthEl && globalMonthEl.value) ? parseInt(globalMonthEl.value) - 1 : null;
+
+            const startMonth = selectedMonth !== null ? selectedMonth : 0;
+            const endMonth = selectedMonth !== null ? selectedMonth : 11;
+
+            for (let m = startMonth; m <= endMonth; m++) {
                 const mStart = new Date(targetYear, m, 1);
                 const mEnd = new Date(targetYear, m + 1, 0);
 
@@ -1496,15 +1505,56 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // --- EVENT LISTENERS FOR FILTERS ---
-    const heatmapSingleSelect = document.getElementById('heatmapSingleYearSelect');
-    if (heatmapSingleSelect) {
-        heatmapSingleSelect.addEventListener('change', (e) => {
-            renderHeatmap(e.target.value, 'year');
-        });
-    }
-
     const updateGlobalKPIs = () => {
-        updateSeasonalStats(data.heatmapData || []);
+        const branch = document.querySelector('select[name="branch"]')?.value || '';
+        const m1 = document.getElementById('kpiMonth1')?.value || 'all';
+        const y1 = document.getElementById('kpiYear1')?.value || '';
+        const m2 = document.getElementById('kpiMonth2')?.value || 'all';
+        const y2 = document.getElementById('kpiYear2')?.value || '';
+
+        if (!y1 || !y2) return;
+
+        // Show loading state
+        const kpis = ['Total', 'Avg', 'PeakDay', 'HourPeak'];
+        kpis.forEach(k => {
+            const el = document.getElementById(`kpi${k}Val`);
+            if (el) el.innerHTML = '<span class="text-sm animate-pulse text-slate-400">Memuat...</span>';
+        });
+
+        fetch(`/dashboard/kpi-data?branch=${branch}&month1=${m1}&year1=${y1}&month2=${m2}&year2=${y2}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) return;
+
+                const updateCard = (key, metric) => {
+                    const elVal = document.getElementById(`kpi${key}Val`);
+                    const elVs = document.getElementById(`kpi${key}Vs`);
+                    const elContainer = document.getElementById(`kpi${key}GrowthContainer`);
+                    const elIcon = document.getElementById(`kpi${key}GrowthIcon`);
+                    const elText = document.getElementById(`kpi${key}GrowthText`);
+
+                    if (elVal) elVal.innerText = metric.val;
+                    if (elVs) elVs.innerText = metric.vs;
+
+                    if (elContainer && elIcon && elText) {
+                        elContainer.className = `flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-bold border ${metric.growth > 0 ? 'bg-rose-50 border-rose-100 text-rose-600' : (metric.growth < 0 ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-500')}`;
+                        elIcon.className = `h-3 w-3 ${metric.growth > 0 ? 'text-rose-500' : (metric.growth < 0 ? 'text-emerald-500' : 'text-slate-400')}`;
+                        elIcon.innerHTML = metric.growth > 0
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />'
+                            : (metric.growth < 0
+                                ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />'
+                                : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14" />');
+                        elText.innerText = Math.abs(metric.growth) + '%';
+                    }
+                };
+
+                updateCard('Total', data.total);
+                updateCard('Avg', data.avg);
+                updateCard('PeakDay', data.peakDay);
+                // The peak hour uses `HourPeak` not `PeakHour` in the blade ID
+                updateCard('HourPeak', data.peakHour);
+            })
+            .catch(err => console.error('Failed to fetch KPI data', err));
     };
 
     ['kpiMonth1', 'kpiYear1', 'kpiMonth2', 'kpiYear2'].forEach(id => {
@@ -1512,12 +1562,47 @@ document.addEventListener("DOMContentLoaded", function () {
         if (el) el.addEventListener('change', updateGlobalKPIs);
     });
 
-    // Initial Render
-    // Since the Heatmap toggle button isn't needed anymore, let's just make sure
-    // renderHeatmap kicks off correctly based on globalYearSelect's initially selected option
-    const initHmYear = heatmapSingleSelect ? heatmapSingleSelect.value : new Date().getFullYear();
+    // Initial Render Heatmap using the dedicated heatmap year filter
+    const hmYearEl = document.getElementById('heatmapYearFilter');
+    const hmBranchEl = document.getElementById('heatmapBranchFilter');
+
+    // Determine initial year: use dedicated heatmap filter, then page-level year, then latest in data
+    let initHmYear = (hmYearEl && hmYearEl.value) ? hmYearEl.value : null;
+
+    if (!initHmYear && data.heatmapData && data.heatmapData.length > 0) {
+        initHmYear = Math.max(...data.heatmapData.map(d => parseInt(d.year) || 0));
+    }
+    if (!initHmYear || initHmYear === 0) {
+        initHmYear = new Date().getFullYear();
+    }
+
     renderHeatmap(initHmYear, 'year');
+
+    // Expose to global scope so applyHeatmapFilter (defined outside) can access it
+    window._renderHeatmap = renderHeatmap;
 });
+
+// Dedicated filter for Heatmap section (Year + Branch only, triggered by "Terapkan" button)
+window.applyHeatmapFilter = function () {
+    const hmYearEl = document.getElementById('heatmapYearFilter');
+    const hmBranchEl = document.getElementById('heatmapBranchFilter');
+
+    const selectedYear = (hmYearEl && hmYearEl.value) ? hmYearEl.value : new Date().getFullYear();
+    const selectedBranch = hmBranchEl ? hmBranchEl.value : '';
+
+    // Filter the client-side heatmapData by selected branch
+    const allData = window._heatmapData || [];
+    const filtered = selectedBranch
+        ? allData.filter(d => d.branch_code === selectedBranch)
+        : allData;
+
+    const dataToRender = filtered.length > 0 ? filtered : allData;
+
+    // Re-render with the chosen year and filtered data
+    if (typeof window._renderHeatmap === 'function') {
+        window._renderHeatmap(selectedYear, 'year', dataToRender);
+    }
+};
 
 // Global Function to Save Note from Modal using AJAX
 window.saveHeatmapNote = function () {
