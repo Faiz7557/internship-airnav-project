@@ -4,13 +4,56 @@
     <title>Laporan Bulanan AirNav</title>
     <style>
         @page {
-            margin: 2cm;
+            margin: 0.5cm 1.5cm 2cm 1.5cm;
         }
 
         body {
-            font-family: sans-serif;
+            font-family: 'Times New Roman', Times, serif;
             font-size: 10pt;
             color: #333;
+        }
+
+/* --- TAMBAHAN CSS KHUSUS KOP SURAT --- */
+        table.kop-surat {
+            border: none;
+            border-radius: 0;
+            margin-bottom: 5px;
+        }
+
+        table.kop-surat td {
+            border: none;
+            padding: 0;
+        }
+
+        .kop-logo {
+            text-align: left;
+            width: 60%;
+            vertical-align: middle;
+            padding-bottom: 5px;
+        }
+
+        .kop-logo img {
+            height: 65px;
+            width: auto;
+            vertical-align: baseline;
+            margin-right: 12px;
+        }
+
+        .logo-text {
+            font-size: 12pt;
+            vertical-align: baseline;
+            color: #000;
+        }
+
+        .kop-info {
+            text-align: left;
+            width: 15%;
+            vertical-align: bottom;
+            font-size: 7pt;
+            line-height: 1.1;
+            color: #000;
+            padding-bottom: 2.2px;
+            white-space: nowrap;
         }
 
         h2 {
@@ -101,6 +144,33 @@
         $namaCabang = $branchNamesMap[$branchCode] ?? $branchCode;
         $periodeBulan = str_replace('_', ' ', $namaBulan);
     @endphp
+
+    <table class="kop-surat">
+        <tr>
+            <td style="width: 60%; vertical-align: bottom;">
+                <table style="border: none; width: auto; margin: 0; padding: 0;">
+                    <tr>
+                        <td style="border: none; padding: 0 10px 0 0; vertical-align: bottom;">
+                            <img src="{{ public_path('img/logo_airnav.png') }}" style="width: 66.4px; height: auto; display: block;">
+                        </td>
+                        <td style="border: none; padding: 0; vertical-align: bottom;">
+                            <span style="font-size: 14pt; color: #000; line-height: 0.8; display: block;">AirNav Indonesia</span>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td class="kop-info">
+                <span style="display: inline-block; text-align: left; font-size: 7pt; line-height: 1.1; color: #000; vertical-align: bottom;">
+                    CABANG SURABYA<br>
+                    Gedung AOB Bandara Juanda<br>
+                    Jl. Juanda no : 1<br>
+                    Sedati, Sidoarjo 61253<br>
+                    Telp : (031) 2986515<br>
+                    <span style="line-height: 0.8; display: block;">email : sekgmsub.airnav@gmail.com</span>
+                </span>
+            </td>
+        </tr>
+    </table>
 
     <h2>Laporan Data Pergerakan Pesawat</h2>
     <p>Periode: {{ $periodeBulan }} (Cabang {{ $namaCabang }})</p>
