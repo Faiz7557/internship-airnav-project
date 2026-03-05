@@ -573,7 +573,7 @@ document.addEventListener("DOMContentLoaded", function () {
                         border: { display: false },
                         ticks: {
                             font: { family: "'Outfit', sans-serif", size: 12, weight: '800' },
-                            color: '#ffffff'
+                            color: '#64748b'
                         }
                     }
                 }

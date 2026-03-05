@@ -130,11 +130,7 @@
                 @if(isset($isFiltered) && $isFiltered)
                     <span class="inline-flex items-center gap-1 mt-2 px-3 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100 shadow-sm">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clip-rule="evenodd" /></svg>
-                        Filter: 
-                        @if(isset($reqBranch) && $reqBranch)
-                            {{ $cabangs->firstWhere('kode_cabang', $reqBranch)->nama }} - 
-                        @endif
-                        {{ $month ? date('F', mktime(0, 0, 0, $month, 10)) . ' ' : '' }}{{ $year }}
+                        Filter: @if(isset($reqBranch) && $reqBranch){{ $cabangs->firstWhere('kode_cabang', $reqBranch)->nama }} - @endif{{ $month ? date('F', mktime(0, 0, 0, $month, 10)) . ' ' : '' }}{{ $year }}
                     </span>
                 @endif
             </div>
@@ -368,8 +364,8 @@
                         <x-slot name="iconColor">text-rose-500</x-slot>
 
                         <x-slot name="action">
-                            <span class="bg-rose-100/80 backdrop-blur text-rose-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-rose-200">
-                                Peak: {{ $highestPeak['count'] }} mvmt
+                            <span title="Rekor histori tertinggi absolut pada rentang waktu ini" class="bg-rose-100/80 backdrop-blur cursor-help text-rose-700 text-[10px] font-bold px-2 py-1 rounded-full shadow-sm border border-rose-200">
+                                Peak Tertinggi: {{ $highestPeak['count'] }}
                             </span>
                         </x-slot>
                     </x-chart-card>
@@ -734,7 +730,7 @@
                             <!-- Metrics Row inside Chart Area for Mobile/Tablet -->
                             <div class="grid grid-cols-3 gap-3">
                                 <div class="bg-rose-50/50 p-3 rounded-2xl border border-rose-100">
-                                    <div class="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Total</div>
+                                    <div class="text-[10px] text-rose-500 font-bold uppercase tracking-wider">Rata-Rata Total</div>
                                     <div class="text-xl font-extrabold text-[#1F3C88] font-outfit" id="modalTotalFlights">-</div>
                                 </div>
                                 <div class="bg-amber-50/50 p-3 rounded-2xl border border-amber-100">
@@ -762,8 +758,8 @@
                                         <canvas id="modalCompositionChart"></canvas>
                                         <!-- Center Text -->
                                         <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                            <span class="text-xs text-slate-400 font-medium">Total</span>
-                                            <span class="text-xl font-bold text-[#1F3C88] font-outfit" id="modalCompTotal">-</span>
+                                            <span class="text-xs text-slate-400 font-medium text-center leading-tight">Rata-Rata<br>Total</span>
+                                            <span class="text-xl font-bold text-[#1F3C88] font-outfit mt-1" id="modalCompTotal">-</span>
                                         </div>
                                     </div>
                                     <!-- Legend -->
@@ -800,7 +796,7 @@
                                 <!-- Morning (06-12) -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1.5">
-                                        <span class="text-xs font-bold text-slate-500">Pagi (06-12)</span>
+                                        <span class="text-xs font-bold text-slate-500">Siang/Sore (06-12)</span>
                                         <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="statPagiVal">-</span>
                                     </div>
                                     <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
@@ -811,7 +807,7 @@
                                 <!-- Afternoon (12-18) -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1.5">
-                                        <span class="text-xs font-bold text-slate-500">Siang (12-18)</span>
+                                        <span class="text-xs font-bold text-slate-500">Malam (12-18)</span>
                                         <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="statSiangVal">-</span>
                                     </div>
                                     <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
@@ -822,7 +818,7 @@
                                 <!-- Evening (18-24) -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1.5">
-                                        <span class="text-xs font-bold text-slate-500">Sore (18-24)</span>
+                                        <span class="text-xs font-bold text-slate-500">Dini Hari (18-24)</span>
                                         <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="statSoreVal">-</span>
                                     </div>
                                     <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
@@ -833,7 +829,7 @@
                                 <!-- Night (00-06) -->
                                 <div>
                                     <div class="flex justify-between text-xs mb-1.5">
-                                        <span class="text-xs font-bold text-slate-500">Malam (00-06)</span>
+                                        <span class="text-xs font-bold text-slate-500">Pagi (00-06)</span>
                                         <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="statMalamVal">-</span>
                                     </div>
                                     <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
