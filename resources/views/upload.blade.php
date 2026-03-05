@@ -41,7 +41,7 @@
                     </a>
                 </div>
                 <div class="hidden md:block">
-                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">AirNav Analytics</h1>
+                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">Airsight</h1>
                     <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Dashboard Operasional</p>
                 </div>
             </div>

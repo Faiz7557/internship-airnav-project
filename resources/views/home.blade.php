@@ -9,6 +9,12 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
+            overflow-x: hidden; 
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        body::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
         }
 
         .banner-slide {
@@ -30,52 +36,53 @@
         }
     </style>
 </head>
-<body class="bg-white m-0 p-0 overflow-x-hidden relative overflow-y-scroll">
-    <style type="text/tailwindcss">
-        /* Neo-Glass & Ambient Background */
-        .glass-card {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
-        }
-        .glass-nav {
-            background: rgba(255, 255, 255, 0.85);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-    </style>
-
-    <!-- Navigation (Fixed Top Glass) -->
-    <nav class="glass-nav absolute top-0 z-50 w-full mb-8 transition-all duration-300">
-        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center gap-4">
-                <div class="bg-gradient-to-br from-white to-slate-50 p-2 rounded-xl shadow-md border border-slate-100">
-                    <a href="#" class="flex items-center gap-3">
-                        <img src="{{ asset('img/logo_airnav.png') }}" alt="Logo AirNav" class="h-8">
-                    </a>
-                </div>
-                <div class="hidden md:block">
-                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">AirNav Analytics</h1>
-                    <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Dashboard Operasional</p>
-                </div>
-            </div>
+<body class="bg-white m-0 p-0 overflow-x-hidden relative">
+    <nav class="absolute top-0 inset-x-0 px-6 md:px-12 py-6 flex justify-between items-center z-50">
+        <div class="flex items-center gap-3">
+            <img src="{{ asset('img/logo_airnav.png') }}"
+                 alt="AirNav Logo"
+                 class="h-10 md:h-12 object-contain">
             
-            <div class="flex gap-1 md:gap-2 bg-slate-100/50 p-1.5 rounded-2xl backdrop-blur-sm border border-white/50">
-                <a href="{{ route('home') }}" class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-[#1F3C88] shadow-md shadow-blue-900/5 ring-1 ring-black/5">Home</a>
-                <a href="{{ route('upload') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Upload</a>
-                <a href="{{ route('summary') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Summary</a>
-                <a href="{{ route('dashboard') }}" class="px-4 py-2 rounded-xl text-sm font-bold text-slate-500 hover:bg-white hover:text-[#1F3C88] hover:shadow-sm transition-all duration-300">Dashboard</a>
-            </div>
+            <span class="text-white font-bold text-xl hidden md:block drop-shadow-md tracking-wide">
+                Airsight
+            </span>
+        </div>
+
+        <div class="flex items-center gap-2 font-medium text-white mr-[-15px]">
+            <a href="#" class="flex items-center gap-2 bg-white/20 backdrop-blur-md text-white px-5 py-2.5 rounded-full transition shadow-sm border border-white/10">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path d="M10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+                    <path fill-rule="evenodd" d="M.664 10.59a1.651 1.651 0 010-1.186A10.004 10.004 0 0110 3c4.257 0 8.2 1.966 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0110 17c-4.257 0-8.2-1.966-9.336-6.41zM10 15a5 5 0 100-10 5 5 0 000 10z" clip-rule="evenodd" />
+                </svg>
+                Home
+            </a>
+
+            <a href="{{ route('upload') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-full transition duration-300 hover:bg-white/15 hover:backdrop-blur-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path fill-rule="evenodd" d="M5.5 17a4.5 4.5 0 01-1.44-8.765 4.5 4.5 0 018.302-3.046 3.5 3.5 0 014.504 4.272A4 4 0 0115 17H5.5zm3.75-2.75a.75.75 0 001.5 0V9.66l1.95 2.1a.75.75 0 101.1-1.02l-3.25-3.5a.75.75 0 00-1.1 0l-3.25 3.5a.75.75 0 101.1 1.02l1.95-2.1v4.59z" clip-rule="evenodd" />
+                </svg>
+                Upload
+            </a>
+                        
+            <a href="{{ route('summary') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-full transition duration-300 hover:bg-white/15 hover:backdrop-blur-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path fill-rule="evenodd" d="M4.5 2A1.5 1.5 0 003 3.5v13A1.5 1.5 0 004.5 18h11a1.5 1.5 0 001.5-1.5V7.621a1.5 1.5 0 00-.44-1.06l-4.12-4.122A1.5 1.5 0 0011.378 2H4.5zm2.25 8.5a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5zm0 3a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" clip-rule="evenodd" />
+                </svg>
+                Summary
+            </a>
+            
+            <a href="{{ route('dashboard') }}" class="flex items-center gap-2 px-5 py-2.5 rounded-full transition duration-300 hover:bg-white/15 hover:backdrop-blur-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-5 h-5">
+                    <path fill-rule="evenodd" d="M4.25 2A2.25 2.25 0 002 4.25v2.5A2.25 2.25 0 004.25 9h2.5A2.25 2.25 0 009 6.75v-2.5A2.25 2.25 0 006.75 2h-2.5zm0 9A2.25 2.25 0 002 13.25v2.5A2.25 2.25 0 004.25 18h2.5A2.25 2.25 0 009 15.75v-2.5A2.25 2.25 0 006.75 11h-2.5zm9-9A2.25 2.25 0 0011 4.25v2.5A2.25 2.25 0 0013.25 9h2.5A2.25 2.25 0 0018 6.75v-2.5A2.25 2.25 0 0015.75 2h-2.5zm0 9A2.25 2.25 0 0011 13.25v2.5A2.25 2.25 0 0013.25 18h2.5A2.25 2.25 0 0018 15.75v-2.5A2.25 2.25 0 0015.75 11h-2.5z" clip-rule="evenodd" />
+                </svg>
+                Dashboard
+            </a>
         </div>
     </nav>
 
     <header class="relative w-full h-[550px] md:h-[760px] group overflow-hidden bg-gray-900 z-0">
-        <img src="{{ asset('img/banner1.png') }}" class="banner-slide absolute inset-0 w-full h-full object-cover object-center opacity-100" id="slide-1">
-        <img src="{{ asset('img/banner2.png') }}" class="banner-slide absolute inset-0 w-full h-full object-cover object-center opacity-0" id="slide-2">
+        <img src="{{ asset('img/banner1.jpg') }}" class="banner-slide absolute inset-0 w-full h-full object-cover object-center opacity-100" id="slide-1">
+        <img src="{{ asset('img/banner2.jpg') }}" class="banner-slide absolute inset-0 w-full h-full object-cover object-center opacity-0" id="slide-2">
         
         <div class="absolute inset-0 bg-gradient-to-t from-[#1F3C88]/90 via-[#1F3C88]/30 to-black/30"></div>
 

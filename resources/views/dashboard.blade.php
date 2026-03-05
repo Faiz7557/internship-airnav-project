@@ -16,13 +16,6 @@
         body::-webkit-scrollbar {
             display: none; /* Chrome, Safari and Opera */
         }
-        /* Fail-Safe Marker: Red Line */
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 5px;
-            background: red; z-index: 99999; pointer-events: none;
-        }
 
         .font-outfit { font-family: 'Outfit', sans-serif; }
         
@@ -106,7 +99,7 @@
                     </a>
                 </div>
                 <div class="hidden md:block">
-                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">AirNav Analytics</h1>
+                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">Airsight</h1>
                     <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Dashboard Operasional</p>
                 </div>
             </div>

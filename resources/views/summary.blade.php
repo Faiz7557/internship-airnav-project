@@ -94,7 +94,7 @@
                     </a>
                 </div>
                 <div class="hidden md:block">
-                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">AirNav Analytics</h1>
+                    <h1 class="font-bold text-lg text-[#1F3C88] leading-tight font-outfit tracking-tight">Airsight</h1>
                     <p class="text-[10px] text-slate-500 font-medium tracking-wider uppercase">Dashboard Operasional</p>
                 </div>
             </div>
@@ -108,13 +108,13 @@
         </div>
     </nav>
 
-    <section class="bg-white border-b border-slate-200 px-6 md:px-12 py-6">
+    <section class="bg-white border-b border-slate-200 px-6 md:px-12 py-6 relative z-40">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-[#1F3C88]">Monthly Summary</h1>
                 <p class="text-slate-500 text-sm">Pilih periode untuk laporan detail.</p>
             </div>
-            <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-xl overflow-x-auto whitespace-nowrap">
+            <div class="flex items-center gap-3 bg-slate-100 p-2 rounded-xl flex-wrap">
                 <select id="filterMonth" onchange="updateYearOptions()" class="bg-white border border-slate-300 text-slate-700 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block py-2.5 pl-4 pr-10 min-w-[120px]">
                     <option value="" disabled selected>Pilih Bulan</option>
                     @foreach(array_keys($availableDates) as $month)
