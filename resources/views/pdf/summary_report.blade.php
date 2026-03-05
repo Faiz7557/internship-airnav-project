@@ -4,7 +4,7 @@
     <title>Laporan Bulanan AirNav</title>
     <style>
         @page {
-            margin: 0.5cm 1.5cm 2cm 1.5cm;
+            margin: 2.5cm 1.5cm 2cm 1.5cm;
         }
 
         body {
@@ -13,7 +13,14 @@
             color: #333;
         }
 
-/* --- TAMBAHAN CSS KHUSUS KOP SURAT --- */
+        header {
+            position: fixed;
+            top: -2cm;
+            left: 0px;
+            right: 0px;
+            height: 2cm;
+        }
+
         table.kop-surat {
             border: none;
             border-radius: 0;
@@ -109,7 +116,8 @@
 
         .table-peak {
             width: 60%;
-            margin-left: 0;
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .highlight-total {
@@ -120,14 +128,16 @@
 
         .chart-container {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 12px;
         }
 
         .chart-img {
-            width: 100%;
-            height: auto;
+            max-width: 100%;
+            height: 240px;
+            width: auto;
             border: 1px solid #eee;
             padding: 5px;
+            border-radius: 8px;
         }
         
         .page-break {
@@ -144,101 +154,105 @@
         $namaCabang = $branchNamesMap[$branchCode] ?? $branchCode;
         $periodeBulan = str_replace('_', ' ', $namaBulan);
     @endphp
-
-    <table class="kop-surat">
-        <tr>
-            <td style="width: 60%; vertical-align: bottom;">
-                <table style="border: none; width: auto; margin: 0; padding: 0;">
-                    <tr>
-                        <td style="border: none; padding: 0 10px 0 0; vertical-align: bottom;">
-                            <img src="{{ public_path('img/logo_airnav.png') }}" style="width: 66.4px; height: auto; display: block;">
-                        </td>
-                        <td style="border: none; padding: 0; vertical-align: bottom;">
-                            <span style="font-size: 14pt; color: #000; line-height: 0.8; display: block;">AirNav Indonesia</span>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-            <td class="kop-info">
-                <span style="display: inline-block; text-align: left; font-size: 7pt; line-height: 1.1; color: #000; vertical-align: bottom;">
-                    CABANG SURABYA<br>
-                    Gedung AOB Bandara Juanda<br>
-                    Jl. Juanda no : 1<br>
-                    Sedati, Sidoarjo 61253<br>
-                    Telp : (031) 2986515<br>
-                    <span style="line-height: 0.8; display: block;">email : sekgmsub.airnav@gmail.com</span>
-                </span>
-            </td>
-        </tr>
-    </table>
-
-    <h2>Laporan Data Pergerakan Pesawat</h2>
-    <p>Periode: {{ $periodeBulan }} (Cabang {{ $namaCabang }})</p>
-
-    <h3>1. Data Daily Movement</h3>
-    <table>
-        <thead>
+    <header>
+        <table class="kop-surat">
             <tr>
-                <th>Tgl</th>
-                <th>Dep</th>
-                <th>Arr</th>
-                <th>Total</th>
-                <th>Jam Peak</th>
-                <th>Jml Peak</th>
-                <th>Rwy Cap</th>
+                <td style="width: 60%; vertical-align: bottom;">
+                    <table style="border: none; width: auto; margin: 0; padding: 0;">
+                        <tr>
+                            <td style="border: none; padding: 0 3px 0 0; vertical-align: bottom;">
+                                <img src="{{ public_path('img/logo_airnav.png') }}" style="width: 66.4px; height: auto; display: block;">
+                            </td>
+                            <td style="border: none; padding: 0 0 5px 0; vertical-align: bottom;">
+                                <span style="font-size: 14pt; color: #000; line-height: 0.8; display: block; position: relative; top: 4px;">AirNav Indonesia</span>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="kop-info">
+                    <span style="display: inline-block; text-align: left; font-size: 7pt; line-height: 1.1; color: #000; vertical-align: bottom;">
+                        CABANG SURABYA<br>
+                        Gedung AOB Bandara Juanda<br>
+                        Jl. Juanda no : 1<br>
+                        Sedati, Sidoarjo 61253<br>
+                        Telp : (031) 2986515<br>
+                        <span style="line-height: 0.8; display: block;">email : sekgmsub.airnav@gmail.com</span>
+                    </span>
+                </td>
             </tr>
-        </thead>
-        <tbody>
-            @foreach($data as $row)
-            <tr>
-                <td>{{ \Carbon\Carbon::parse($row->date)->format('d') }}</td>
-                <td>{{ $row->total_dep }}</td>
-                <td>{{ $row->total_arr }}</td>
-                <td class="highlight-total">{{ $row->total_flights }}</td>
-                <td>{{ $row->peak_hour }}</td>
-                <td>{{ $row->peak_hour_count }}</td>
-                <td>{{ $row->runway_capacity }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+        </table>
+    </header>
 
-    <div class="page-break"></div>
+    <main>
+        <h2>Laporan Data Pergerakan Pesawat</h2>
+        <p>Periode: {{ $periodeBulan }} (Cabang {{ $namaCabang }})</p>
 
-    <h3>2. Data Frekuensi Peak Hour</h3>
-    <table class="table-peak">
-        <thead>
-            <tr>
-                <th>Jam (UTC)</th>
-                <th>Frekuensi Kejadian</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach($peakHours as $jam => $freq)
-            <tr>
-                <td><strong>{{ $jam }}</strong></td>
-                <td>{{ $freq }}</td>
-            </tr>
-            @endforeach
-        </tbody>
-    </table>
+        <h3>1. Data Daily Movement</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Tgl</th>
+                    <th>Dep</th>
+                    <th>Arr</th>
+                    <th>Total</th>
+                    <th>Jam Peak</th>
+                    <th>Jml Peak</th>
+                    <th>Rwy Cap</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($data as $row)
+                <tr>
+                    <td>{{ \Carbon\Carbon::parse($row->date)->format('d') }}</td>
+                    <td>{{ $row->total_dep }}</td>
+                    <td>{{ $row->total_arr }}</td>
+                    <td class="highlight-total">{{ $row->total_flights }}</td>
+                    <td>{{ $row->peak_hour }}</td>
+                    <td>{{ $row->peak_hour_count }}</td>
+                    <td>{{ $row->runway_capacity }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
 
-    <div class="page-break"></div>
+        <div class="page-break"></div>
 
-    <h2>Visualisasi Grafik</h2>
-    <br>
+        <br>
+        <h3>2. Data Frekuensi Peak Hour</h3>
+        <br>
+        <table class="table-peak">
+            <thead>
+                <tr>
+                    <th>Jam (UTC)</th>
+                    <th>Frekuensi Kejadian</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($peakHours as $jam => $freq)
+                <tr>
+                    <td><strong>{{ $jam }}</strong></td>
+                    <td>{{ $freq }}</td>
+                </tr>
+                @endforeach
+            </tbody>
+        </table>
 
-    <div class="chart-container">
-        <img src="{{ $chartPeak }}" class="chart-img">
-    </div>
+        <div class="page-break"></div>
 
-    <div class="chart-container">
-        <img src="{{ $chartTraffic }}" class="chart-img">
-    </div>
+        <h2>Visualisasi Grafik</h2>
 
-    <div class="chart-container">
-        <img src="{{ $chartTabulation }}" class="chart-img">
-    </div>
+        <div class="chart-container">
+            <img src="{{ $chartPeak }}" class="chart-img">
+        </div>
+
+        <div class="chart-container">
+            <img src="{{ $chartTraffic }}" class="chart-img">
+        </div>
+
+        <div class="chart-container">
+            <img src="{{ $chartTabulation }}" class="chart-img">
+        </div>
+    </main>
 
 </body>
 </html>
