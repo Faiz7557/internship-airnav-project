@@ -842,7 +842,7 @@
                                 </div>
                             </div>
                             
-                            <div class="mt-8 pt-5 border-t border-slate-200/60 relative z-10">
+                            <div id="modalNoteSection" class="mt-8 pt-5 border-t border-slate-200/60 relative z-10">
                                 <div class="bg-white/60 p-3 rounded-xl border border-white shadow-sm flex flex-col gap-2 relative">
                                     <!-- Token for AJAX -->
                                     <meta name="csrf-token" content="{{ csrf_token() }}">

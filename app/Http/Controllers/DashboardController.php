@@ -560,8 +560,27 @@ class DashboardController extends Controller
             return response()->json(['error' => 'Missing compare dates'], 400);
         }
 
+        $ytdIntersectionMonths = null;
+
+        // If both are comparing "Semua Bulan" (All Months), calculate intersection to ensure Like-for-Like (YTD)
+        if ($reqMonth1 === null && $reqMonth2 === null) {
+            $qMonths1 = DailyFlightStat::whereYear('date', $reqYear1);
+            if ($branch) $qMonths1->where('branch_code', $branch);
+            $months1 = $qMonths1->select(DB::raw('MONTH(date) as m'))->distinct()->pluck('m')->toArray();
+
+            $qMonths2 = DailyFlightStat::whereYear('date', $reqYear2);
+            if ($branch) $qMonths2->where('branch_code', $branch);
+            $months2 = $qMonths2->select(DB::raw('MONTH(date) as m'))->distinct()->pluck('m')->toArray();
+
+            $ytdIntersectionMonths = array_intersect($months1, $months2);
+        }
+
         $q1 = DailyFlightStat::whereYear('date', $reqYear1);
-        if ($reqMonth1) $q1->whereMonth('date', $reqMonth1);
+        if ($reqMonth1) {
+            $q1->whereMonth('date', $reqMonth1);
+        } elseif ($ytdIntersectionMonths !== null) {
+            $q1->whereIn(DB::raw('MONTH(date)'), $ytdIntersectionMonths);
+        }
         if ($branch) $q1->where('branch_code', $branch);
         $s1 = $q1->get();
 
@@ -571,7 +590,11 @@ class DashboardController extends Controller
         $peakHour1 = $s1->max('peak_hour_count') ?? 0;
 
         $q2 = DailyFlightStat::whereYear('date', $reqYear2);
-        if ($reqMonth2) $q2->whereMonth('date', $reqMonth2);
+        if ($reqMonth2) {
+            $q2->whereMonth('date', $reqMonth2);
+        } elseif ($ytdIntersectionMonths !== null) {
+            $q2->whereIn(DB::raw('MONTH(date)'), $ytdIntersectionMonths);
+        }
         if ($branch) $q2->where('branch_code', $branch);
         $s2 = $q2->get();
 
@@ -586,7 +609,23 @@ class DashboardController extends Controller
         $growthPeakHour = $peakHour2 > 0 ? round((($peakHour1 - $peakHour2) / $peakHour2) * 100, 1) : ($peakHour1 > 0 ? 100 : 0);
 
         $monthNames = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',7=>'Jul',8=>'Ags',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'];
-        $n2 = ($reqMonth2 && isset($monthNames[$reqMonth2]) ? $monthNames[$reqMonth2] . ' ' : '') . $reqYear2;
+        
+        $n2 = "";
+        if ($reqMonth2) {
+            $n2 = (isset($monthNames[$reqMonth2]) ? $monthNames[$reqMonth2] . ' ' : '') . $reqYear2;
+        } elseif ($ytdIntersectionMonths !== null && !empty($ytdIntersectionMonths)) {
+            // It's an intersection YTD view
+            sort($ytdIntersectionMonths);
+            $minM = min($ytdIntersectionMonths);
+            $maxM = max($ytdIntersectionMonths);
+            if ($minM == $maxM) {
+                $n2 = $monthNames[$minM] . ' ' . $reqYear2;
+            } else {
+                $n2 = $monthNames[$minM] . '-' . $monthNames[$maxM] . ' ' . $reqYear2 . ' (YTD)';
+            }
+        } else {
+             $n2 = $reqYear2;
+        }
 
         return response()->json([
             'total' => [ 'val' => number_format($total1), 'growth' => $growthTotal, 'vs' => "vs " . $n2 ],

@@ -176,21 +176,23 @@ document.addEventListener("DOMContentLoaded", function () {
                 } else if (deleteForm) {
                     deleteForm.classList.add('hidden');
                 }
+
+                // Reset CSS animation states
+                const evPanel = document.getElementById('eventModalPanel');
+                const evBackdrop = document.getElementById('eventModalBackdrop');
+
                 modal.classList.remove('hidden');
+
+                // Force a browser reflow before adding animation classes
+                void modal.offsetWidth;
+
+                if (evBackdrop) evBackdrop.classList.remove('opacity-0');
+                if (evPanel) {
+                    evPanel.classList.remove('scale-95', 'opacity-0');
+                    evPanel.classList.add('scale-100', 'opacity-100');
+                }
             }
         };
-
-        const closeEventModal = () => {
-            const m = document.getElementById('eventDetailModal');
-            if (m) m.classList.add('hidden');
-        };
-
-        const btnCloseEvent = document.getElementById('closeEventModalBtn');
-        if (btnCloseEvent) btnCloseEvent.addEventListener('click', closeEventModal);
-        const btnCloseEventText = document.getElementById('closeEventModalBtnText');
-        if (btnCloseEventText) btnCloseEventText.addEventListener('click', closeEventModal);
-        const eventBackdrop = document.getElementById('eventModalBackdrop');
-        if (eventBackdrop) eventBackdrop.addEventListener('click', closeEventModal);
 
 
         if (events.length > 0 && trendData.labels && trendData.labels.length > 0) {
@@ -649,15 +651,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const listContainer = document.getElementById('modalTop3List');
         if (listContainer) listContainer.innerHTML = top3HTML;
 
-        const periods = [
-            { name: 'Pagi', val: volPagi },
-            { name: 'Siang', val: volSiang },
-            { name: 'Sore', val: volSore },
-            { name: 'Malam', val: volMalam }
-        ];
-        const maxPeriod = periods.reduce((prev, current) => (prev.val > current.val) ? prev : current);
-        const insightHTML = `Trafik terpadat terjadi pada <span class="font-bold text-slate-700">${maxPeriod.name} hari</span> dengan total ${maxPeriod.val} pergerakan.`;
-        document.getElementById('modalInsightText').innerHTML = insightHTML;
+        // Hide Note Section since this is a composite visualization for Day of Week
+        const modalNoteSection = document.getElementById('modalNoteSection');
+        if (modalNoteSection) modalNoteSection.classList.add('hidden');
 
         const ctxDD = document.getElementById('drillDownChart').getContext('2d');
         if (drillDownChartInstance) drillDownChartInstance.destroy();
@@ -804,13 +800,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const listContainer = document.getElementById('modalTop3List');
         if (listContainer) listContainer.innerHTML = top3HTML;
 
-        const periods = [
-            { name: 'Pagi', val: volPagi },
-            { name: 'Siang', val: volSiang },
-            { name: 'Sore', val: volSore },
-            { name: 'Malam', val: volMalam }
-        ];
-        const maxPeriod = periods.reduce((prev, current) => (prev.val > current.val) ? prev : current);
+        // Show Note Section for specific date drilldowns
+        const modalNoteSection = document.getElementById('modalNoteSection');
+        if (modalNoteSection) modalNoteSection.classList.remove('hidden');
 
         // Fill Modal Note Form
         const noteInput = document.getElementById('modalInsightInput');
@@ -967,6 +959,10 @@ document.addEventListener("DOMContentLoaded", function () {
     if (btnCloseEventText) btnCloseEventText.addEventListener('click', closeEventDetailModal);
     const btnCloseEventIcon = document.getElementById('closeEventModalBtn');
     if (btnCloseEventIcon) btnCloseEventIcon.addEventListener('click', closeEventDetailModal);
+
+    // Add backdrop click close listener
+    const evBackdropGlobal = document.getElementById('eventModalBackdrop');
+    if (evBackdropGlobal) evBackdropGlobal.addEventListener('click', closeEventDetailModal);
 
     // Replace default confirm() with Custom Modal
     if (triggerDeleteBtn && deleteConfirmModal) {
