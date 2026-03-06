@@ -9,12 +9,12 @@
     <style>
         body {
             font-family: 'Poppins', sans-serif;
-            overflow-x: hidden; 
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+            overflow-x: hidden;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
         body::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
+            display: none;
         }
 
         .banner-slide {
@@ -22,8 +22,12 @@
         }
 
         @keyframes scroll-cards {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-50%);
+            }
         }
 
         .animate-scroll {
@@ -139,7 +143,7 @@
                         </div>
                     </div>
 
-                    <a href="{{ route('summary') }}?branch_code={{ $selectedCabang }}" class="text-sm font-semibold text-[#1F3C88] hover:underline transition whitespace-nowrap">
+                    <a href="{{ route('dashboard') }}?branch_code={{ $selectedCabang }}" class="text-sm font-semibold text-[#1F3C88] hover:underline transition whitespace-nowrap">
                         Lihat Analisis Lengkap →
                     </a>
                 </div>
@@ -274,8 +278,8 @@
                     <h4 class="text-xs font-bold text-blue-800 uppercase mb-3">➕ Tambah Cabang Baru</h4>
                     <form action="{{ route('cabang.store') }}" method="POST" class="flex flex-col sm:flex-row gap-3">
                         @csrf
-                        <input type="text" name="kode_cabang" placeholder="Kode ICAO (Cth: WADD)" required class="w-full sm:w-1/3 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
-                        <input type="text" name="nama" placeholder="Nama Kota (Cth: Bali)" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" name="kode_cabang" placeholder="Kode ICAO" required class="w-full sm:w-1/3 border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                        <input type="text" name="nama" placeholder="Nama Kota" required class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         <button type="submit" class="bg-[#1F3C88] hover:bg-blue-800 text-white font-semibold rounded-lg px-5 py-2 text-sm transition shrink-0 shadow-sm">Simpan</button>
                     </form>
                 </div>

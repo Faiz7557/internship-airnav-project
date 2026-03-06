@@ -11,16 +11,18 @@
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 
     <style type="text/tailwindcss">
-        body { 
-            font-family: 'Poppins', sans-serif; 
-            overflow-x: hidden; 
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
+        body {
+            font-family: 'Poppins', sans-serif;
+            overflow-x: hidden;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
+
         body::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
+            display: none;
         }
-        /* Neo-Glass & Ambient Background */
+
+        
         .glass-card {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(20px);
@@ -28,6 +30,7 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         }
+
         .glass-nav {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -46,6 +49,7 @@
             z-index: -1;
             overflow: hidden;
         }
+
         .orb {
             position: absolute;
             border-radius: 50%;
@@ -53,13 +57,27 @@
             opacity: 0.6;
             animation: float 10s infinite ease-in-out;
         }
+
         @keyframes float {
-            0%, 100% { transform: translateY(0) scale(1); }
-            50% { transform: translateY(-20px) scale(1.05); }
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-20px) scale(1.05);
+            }
         }
-        .animate-float-slow { animation: float 15s infinite ease-in-out; }
-        .animate-float-delayed { animation: float 12s infinite ease-in-out 5s; }
-        .animate-pulse-slow { animation: pulse 8s infinite ease-in-out; }
+
+        .animate-float-slow {
+            animation: float 15s infinite ease-in-out;
+        }
+
+        .animate-float-delayed {
+            animation: float 12s infinite ease-in-out 5s;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 8s infinite ease-in-out;
+        }
 
         .animate-fade-in-up {
             animation: fadeInUp 0.5s ease-out;
@@ -77,14 +95,12 @@
 </head>
 <body class="bg-slate-50 min-h-screen flex flex-col">
 
-    <!-- Ambient Background -->
     <div class="ambient-light">
         <div class="orb bg-blue-300/30 w-[600px] h-[600px] top-[-100px] left-[-100px] animate-float-slow"></div>
         <div class="orb bg-purple-300/30 w-[500px] h-[500px] bottom-0 right-0 animate-float-delayed"></div>
         <div class="orb bg-amber-200/20 w-[400px] h-[400px] top-[40%] left-[30%] animate-pulse-slow"></div>
     </div>
 
-    <!-- Navigation (Fixed Top Glass) -->
     <nav class="glass-nav sticky top-0 z-50 w-full transition-all duration-300">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">

@@ -14,7 +14,6 @@
     <div class="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px] -z-10 pointer-events-none"></div>
 
     <style type="text/tailwindcss">
-        /* Neo-Glass & Ambient Background */
         .glass-card {
             background: rgba(255, 255, 255, 0.7);
             backdrop-filter: blur(20px);
@@ -22,6 +21,7 @@
             border: 1px solid rgba(255, 255, 255, 0.5);
             box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
         }
+
         .glass-nav {
             background: rgba(255, 255, 255, 0.85);
             backdrop-filter: blur(12px);
@@ -31,7 +31,6 @@
         }
     </style>
 
-    <!-- Navigation (Fixed Top Glass) -->
     <nav class="glass-nav sticky top-0 z-50 w-full mb-8 transition-all duration-300">
         <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
             <div class="flex items-center gap-4">
@@ -102,7 +101,7 @@
                         </div>
                         <input id="dropzone-file" name="file" type="file" class="hidden" required onchange="handleFileSelect(this)" />
                     </label>
-                    <p class="text-xs text-slate-400 mt-2 text-center">Supported: .xls or .xlsx according to Airnav Template</p>
+                    <p class="text-xs text-slate-400 mt-2 text-center">Supported: .xlsx according to Airnav Template</p>
                 </div>
 
                 <div>
@@ -128,11 +127,7 @@
                     </svg>
                 </button>
             </form>
-
-            <div class="mt-6 flex items-center justify-center gap-2 text-slate-300 text-xs">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="w-3 h-3 text-green-500"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg>
-                Secure Processing Environment
-            </div>
+            
         </div>
     </main>
 
@@ -308,7 +303,7 @@
             formData.append('branch_code', branchInput.value);
             formData.append('_token', '{{ csrf_token() }}');
 
-            fetch('{{ route("upload.check") }}', {
+            fetch('{{ route(name: "upload.check") }}', {
                 method: 'POST',
                 body: formData
             })

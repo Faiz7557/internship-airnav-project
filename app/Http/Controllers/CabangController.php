@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Cabang;
 use App\Models\DailyFlightStat;
+use App\Models\RawFlightData;
+use App\Models\DailyNote;
 use Illuminate\Http\Request;
 
 class CabangController extends Controller
@@ -36,6 +38,8 @@ class CabangController extends Controller
 
         if ($oldKode !== $newKode) {
             DailyFlightStat::where('branch_code', $oldKode)->update(['branch_code' => $newKode]);
+            RawFlightData::where('kode_cabang', $oldKode)->update(['kode_cabang' => $newKode]);
+            DailyNote::where('branch_code', $oldKode)->update(['branch_code' => $newKode]);
         }
 
         $cabang->update([
