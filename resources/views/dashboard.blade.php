@@ -643,6 +643,31 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         Terapkan
                     </button>
+
+                    <div class="w-px h-5 bg-slate-200 flex-shrink-0"></div>
+
+                    <!-- View Notes Button -->
+                    <button id="toggleNotesBtn" onclick="toggleHeatmapNotes()" class="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold py-1.5 px-3 rounded-lg transition-colors shadow-sm border border-amber-200/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        <span>Catatan</span>
+                        <span id="notesBadge" class="hidden ml-0.5 bg-amber-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Notes Panel (Hidden by Default) -->
+            <div id="heatmapNotesPanel" class="hidden mb-4 bg-amber-50/50 border border-amber-200/60 rounded-2xl p-4 animate-enter">
+                <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Daftar Catatan Harian
+                    </h4>
+                    <button onclick="toggleHeatmapNotes()" class="text-amber-400 hover:text-amber-600 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                    </button>
+                </div>
+                <div id="heatmapNotesList" class="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+                    <p class="text-xs text-amber-500 italic">Belum ada catatan.</p>
                 </div>
             </div>
 
@@ -867,7 +892,7 @@
         <div class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" id="eventModalBackdrop"></div>
         <div class="fixed inset-0 z-10 overflow-y-auto">
             <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div id="eventModalPanel" class="relative transform overflow-hidden rounded-[2rem] bg-white/95 backdrop-blur-xl text-left shadow-2xl transition-all duration-300 opacity-100 scale-100 sm:my-8 sm:w-full sm:max-w-lg border border-white/60">
+                <div id="eventModalPanel" class="relative transform overflow-hidden rounded-[2rem] bg-white/95 backdrop-blur-xl text-left shadow-2xl transition-all duration-300 opacity-100 scale-100 sm:my-8 sm:w-full sm:max-w-4xl border border-white/60">
                     
                     <!-- Modal Header -->
                     <div class="bg-gradient-to-r from-slate-50 to-white px-6 py-5 border-b border-slate-100 flex justify-between items-center">
@@ -887,6 +912,7 @@
 
                     <!-- Modal Body -->
                     <div class="px-6 py-6">
+                        <!-- Top Metrics -->
                         <div class="grid grid-cols-2 gap-4 mb-6">
                             <div class="bg-blue-50/50 p-5 rounded-2xl border border-blue-100">
                                 <p class="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1">Total Pergerakan</p>
@@ -898,7 +924,8 @@
                             </div>
                         </div>
 
-                        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-lg shadow-slate-100/50">
+                        <!-- Peak Traffic Info -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm mb-6">
                             <div class="flex justify-between items-center mb-4">
                                 <span class="text-xs font-bold text-slate-500 uppercase tracking-wide">Puncak Trafik Event</span>
                                 <span class="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200" id="eventModalPeakDate">-</span>
@@ -911,6 +938,107 @@
                                 <div class="bg-gradient-to-r from-slate-600 to-slate-800 h-2 rounded-full" style="width: 100%"></div>
                             </div>
                              <p class="text-[10px] text-slate-400 mt-2 text-right italic">*Data tertinggi selama periode event</p>
+                        </div>
+
+                        <!-- Detailed Layout Grid: Chart (Left) + Detailed Stats (Right) -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Main Content: Charts (Span 2) -->
+                            <div class="lg:col-span-2 space-y-4">
+                                <!-- Charts Grid -->
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <!-- Line Chart (Hourly Profile) -->
+                                    <div class="h-[280px] w-full bg-slate-50/50 rounded-2xl p-2 border border-slate-100 shadow-inner relative">
+                                        <h4 class="absolute top-3 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Profil Per Jam (UTC 0)</h4>
+                                        <canvas id="eventDrillDownChart"></canvas>
+                                    </div>
+
+                                    <!-- Donut Chart (Flight Composition) -->
+                                    <div class="h-[280px] w-full bg-slate-50/50 rounded-2xl p-2 border border-slate-100 shadow-inner relative flex flex-col items-center justify-center">
+                                        <h4 class="absolute top-3 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Proporsi Tipe (Avg)</h4>
+                                        <div class="h-[200px] w-full relative">
+                                            <canvas id="eventModalCompositionChart"></canvas>
+                                            <!-- Center Text -->
+                                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                                <span class="text-xs text-slate-400 font-medium text-center leading-tight">Rata-Rata<br>Total</span>
+                                                <span class="text-xl font-bold text-[#1F3C88] font-outfit mt-1" id="eventModalCompTotal">-</span>
+                                            </div>
+                                        </div>
+                                        <!-- Legend -->
+                                        <div class="flex gap-3 mt-2">
+                                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#10b981]"></span><span class="text-[10px] text-slate-500 font-bold">Dom</span></div>
+                                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#f59e0b]"></span><span class="text-[10px] text-slate-500 font-bold">Int</span></div>
+                                            <div class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-purple-500"></span><span class="text-[10px] text-slate-500 font-bold">Train</span></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Top 3 Hours List -->
+                                <div class="bg-rose-50/30 rounded-2xl p-4 border border-rose-100/50 mt-4">
+                                    <h4 class="text-xs font-bold text-rose-400 uppercase tracking-wider mb-3">3 Jam Rata-rata Tersibuk (UTC 0)</h4>
+                                    <div id="eventModalTop3List" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sidebar: Time of Day Analysis -->
+                            <div class="bg-slate-50/80 rounded-3xl p-6 border border-slate-100 h-full flex flex-col relative overflow-hidden">
+                                <!-- Decorative background -->
+                                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+
+                                <h3 class="text-sm font-bold text-[#1F3C88] mb-6 flex items-center gap-2 relative z-10">
+                                    <div class="p-1.5 bg-blue-100 rounded text-blue-600">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" /></svg>
+                                    </div>
+                                    Distribusi Waktu
+                                </h3>
+                                
+                                <div class="space-y-5 relative z-10">
+                                    <!-- Morning (06-12) -->
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1.5">
+                                            <span class="text-xs font-bold text-slate-500">Siang/Sore (06-12)</span>
+                                            <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="eventStatPagiVal">-</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
+                                            <div class="bg-gradient-to-r from-sky-400 to-sky-500 h-2 rounded-full shadow-sm" id="eventStatPagiBar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Afternoon (12-18) -->
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1.5">
+                                            <span class="text-xs font-bold text-slate-500">Malam (12-18)</span>
+                                            <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="eventStatSiangVal">-</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
+                                            <div class="bg-gradient-to-r from-amber-400 to-amber-500 h-2 rounded-full shadow-sm" id="eventStatSiangBar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Evening (18-24) -->
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1.5">
+                                            <span class="text-xs font-bold text-slate-500">Dini Hari (18-24)</span>
+                                            <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="eventStatSoreVal">-</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
+                                            <div class="bg-gradient-to-r from-indigo-400 to-indigo-600 h-2 rounded-full shadow-sm" id="eventStatSoreBar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Night (00-06) -->
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1.5">
+                                            <span class="text-xs font-bold text-slate-500">Pagi (00-06)</span>
+                                            <span class="text-xs font-bold text-[#1F3C88] font-outfit" id="eventStatMalamVal">-</span>
+                                        </div>
+                                        <div class="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
+                                            <div class="bg-gradient-to-r from-slate-400 to-slate-500 h-2 rounded-full shadow-sm" id="eventStatMalamBar" style="width: 0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     

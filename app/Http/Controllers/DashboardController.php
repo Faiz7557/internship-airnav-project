@@ -101,6 +101,33 @@ class DashboardController extends Controller
                 $peakVal = $peakNode ? $peakNode->total_flights : 0;
                 $peakDate = $peakNode ? Carbon::parse($peakNode->date)->format('d M Y') : '-';
 
+                $totalDom = $stats->sum(fn($d) => $d->dom_arr + $d->dom_dep);
+                $totalInt = $stats->sum(fn($d) => $d->int_arr + $d->int_dep);
+                $totalTraining = $stats->sum(fn($d) => $d->training_arr + $d->training_dep);
+                $daysCount = $stats->count();
+                
+                $domAvg = $daysCount > 0 ? round($totalDom / $daysCount) : 0;
+                $intAvg = $daysCount > 0 ? round($totalInt / $daysCount) : 0;
+                $trainingAvg = $daysCount > 0 ? round($totalTraining / $daysCount) : 0;
+
+                // Get Hourly Data for the event
+                $dates = $stats->pluck('date')->toArray();
+                $hourlyArray = array_fill(0, 24, 0);
+                if (!empty($dates)) {
+                    $rawRecords = \App\Models\RawFlightData::whereIn('date', $dates)->get();
+                    foreach ($rawRecords as $record) {
+                        for ($h = 0; $h < 24; $h++) {
+                            $hourCol = 'h' . str_pad($h, 2, '0', STR_PAD_LEFT);
+                            $hourlyArray[$h] += (int) $record->{$hourCol};
+                        }
+                    }
+                    if ($daysCount > 0) {
+                        for ($h = 0; $h < 24; $h++) {
+                            $hourlyArray[$h] = (int) round($hourlyArray[$h] / $daysCount);
+                        }
+                    }
+                }
+
                 $events[] = [
                     'id' => $ev->id,
                     'name' => $ev->name,
@@ -113,7 +140,13 @@ class DashboardController extends Controller
                     'total' => number_format($totalVal),
                     'avg' => number_format($avgVal),
                     'peak' => number_format($peakVal),
-                    'peakDate' => $peakDate
+                    'peakDate' => $peakDate,
+                    'hourly_data' => $hourlyArray,
+                    'composition' => [
+                        'dom' => $domAvg,
+                        'int' => $intAvg,
+                        'training' => $trainingAvg
+                    ]
                 ];
             }
         }
@@ -649,5 +682,19 @@ class DashboardController extends Controller
         );
 
         return response()->json(['success' => true, 'message' => 'Catatan berhasil disimpan']);
+    }
+
+    public function deleteNote(Request $request)
+    {
+        $request->validate([
+            'date' => 'required|date',
+            'branch_code' => 'required|string',
+        ]);
+
+        DailyNote::where('date', $request->date)
+            ->where('branch_code', $request->branch_code)
+            ->delete();
+
+        return response()->json(['success' => true, 'message' => 'Catatan berhasil dihapus']);
     }
 }

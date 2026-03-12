@@ -16,6 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
     let drillDownChartInstance = null;
     let modalCompositionChartInstance = null;
+    let eventDrillDownChartInstance = null;
+    let eventModalCompositionChartInstance = null;
 
     // Custom Crosshair Plugin
     const crosshairPlugin = {
@@ -191,6 +193,113 @@ document.addEventListener("DOMContentLoaded", function () {
                     evPanel.classList.remove('scale-95', 'opacity-0');
                     evPanel.classList.add('scale-100', 'opacity-100');
                 }
+            }
+
+            // --- Populate Time Distribution Bars & Hourly Chart ---
+            let profileData = event.hourly_data || new Array(24).fill(0);
+            const totalDaily = profileData.reduce((a, b) => a + b, 0);
+            
+            const calcSum = (start, end) => profileData.slice(start, end).reduce((a, b) => a + b, 0);
+            const volMalam = calcSum(0, 6);
+            const volPagi = calcSum(6, 12);
+            const volSiang = calcSum(12, 18);
+            const volSore = calcSum(18, 24);
+
+            const updateBar = (idVal, idBar, val, total) => {
+                const pct = total > 0 ? (val / total) * 100 : 0;
+                const elVal = document.getElementById(idVal);
+                const elBar = document.getElementById(idBar);
+                if (elVal) elVal.innerText = `${val} (${Math.round(pct)}%)`;
+                if (elBar) elBar.style.width = `${pct}%`;
+            };
+
+            updateBar('eventStatPagiVal', 'eventStatPagiBar', volPagi, totalDaily);
+            updateBar('eventStatSiangVal', 'eventStatSiangBar', volSiang, totalDaily);
+            updateBar('eventStatSoreVal', 'eventStatSoreBar', volSore, totalDaily);
+            updateBar('eventStatMalamVal', 'eventStatMalamBar', volMalam, totalDaily);
+
+            // Busiest 3 Hours
+            const top3 = profileData
+                .map((val, idx) => ({ hour: hourLabels[idx], val }))
+                .sort((a, b) => b.val - a.val)
+                .slice(0, 3);
+
+            const top3HTML = top3.map((item, i) =>
+                `<div class="flex justify-between items-center py-2 border-b border-slate-200 last:border-0 border-r-0 sm:border-r sm:last:border-r-0 pr-0 sm:pr-4 border-rose-100">
+                    <div class="flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-xs font-bold">${i + 1}</span>
+                        <span class="text-slate-600 font-medium text-xs">${item.hour}</span>
+                    </div>
+                    <span class="font-bold text-slate-800 text-sm">${item.val} <span class="text-[10px] font-normal text-slate-400">Pnb</span></span>
+                </div>`
+            ).join('');
+            const listContainer = document.getElementById('eventModalTop3List');
+            if (listContainer) listContainer.innerHTML = top3HTML;
+
+            // Hourly Profile Chart
+            const ctxDD = document.getElementById('eventDrillDownChart')?.getContext('2d');
+            if (ctxDD) {
+                if (eventDrillDownChartInstance) eventDrillDownChartInstance.destroy();
+                const gradientDD = createGradient(ctxDD, 'rgba(59, 130, 246, 0.5)', 'rgba(59, 130, 246, 0.0)');
+
+                eventDrillDownChartInstance = new Chart(ctxDD, {
+                    type: 'line',
+                    data: {
+                        labels: hourLabels,
+                        datasets: [{
+                            label: 'Rata-rata Pergerakan',
+                            data: profileData,
+                            borderColor: '#3b82f6', backgroundColor: gradientDD, borderWidth: 3, fill: true, pointBackgroundColor: '#fff', pointBorderColor: '#3b82f6', pointRadius: 4, tension: 0.4
+                        }]
+                    },
+                    options: {
+                        ...commonOptions,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, zoom: { pan: { enabled: false }, zoom: { wheel: { enabled: false } } } },
+                        scales: { y: { beginAtZero: true, grid: { color: 'rgba(226, 232, 240, 0.5)' } }, x: { grid: { display: false }, ticks: { maxTicksLimit: 8 } } }
+                    }
+                });
+            }
+
+            // Composition Donut Chart
+            let domVal = event.composition?.dom || 0;
+            let intVal = event.composition?.int || 0;
+            let trainVal = event.composition?.training || 0;
+            
+            // Normalize slightly to exactly match totalDaily if there's rounding difference
+            const rawTotalComp = domVal + intVal + trainVal;
+            if (rawTotalComp > 0 && totalDaily > 0) {
+                const scaleComp = totalDaily / rawTotalComp;
+                domVal = Math.round(domVal * scaleComp);
+                intVal = Math.round(intVal * scaleComp);
+                trainVal = totalDaily - domVal - intVal;
+                if (trainVal < 0) { trainVal = 0; intVal = totalDaily - domVal; if (intVal < 0) { intVal = 0; domVal = totalDaily; } }
+            }
+
+            const totalEl = document.getElementById('eventModalCompTotal');
+            if (totalEl) totalEl.innerText = totalDaily.toLocaleString();
+
+            const ctxComp = document.getElementById('eventModalCompositionChart')?.getContext('2d');
+            if (ctxComp) {
+                if (eventModalCompositionChartInstance) eventModalCompositionChartInstance.destroy();
+                eventModalCompositionChartInstance = new Chart(ctxComp, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Domestik', 'Internasional', 'Training'],
+                        datasets: [{
+                            data: [domVal, intVal, trainVal],
+                            backgroundColor: ['#10b981', '#f59e0b', '#a855f7'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        plugins: { legend: { display: false }, datalabels: { display: false }, tooltip: { callbacks: { label: (c) => ` ${c.label}: ${Math.round(c.raw)}` } } }
+                    }
+                });
             }
         };
 
@@ -1307,8 +1416,10 @@ document.addEventListener("DOMContentLoaded", function () {
         let maxVal = 0;
         let minVal = Infinity;
         const dataMap = {};
+        const noteMap = {};
         yearData.forEach(d => {
             dataMap[d.date] = d.value;
+            if (d.note && d.note.trim() !== '') noteMap[d.date] = d.note;
             if (d.value > maxVal) maxVal = d.value;
             if (d.value < minVal) minVal = d.value;
         });
@@ -1382,12 +1493,16 @@ document.addEventListener("DOMContentLoaded", function () {
                                     onmousemove="moveHeatmapTooltip(event)"
                                     onmouseleave="hideHeatmapTooltip()"
                                     onclick="openHeatmapDrillDown('${dateKey}')">
+                                ${noteMap[dateKey] ? '<div class="absolute top-[2px] right-[2px] w-[5px] h-[5px] rounded-full bg-amber-400 ring-1 ring-white shadow-sm"></div>' : ''}
                             </div>`;
                 }
 
                 html += `</div></div>`;
             }
             container.innerHTML = html;
+
+            // Populate Notes Panel
+            populateHeatmapNotes(noteMap);
         }
 
         if (mode === 'month') {
@@ -1425,6 +1540,120 @@ document.addEventListener("DOMContentLoaded", function () {
                 monthContainer.innerHTML += calHTML;
             });
         }
+    };
+
+    // --- Populate the Notes Panel from noteMap ---
+    function populateHeatmapNotes(noteMap) {
+        const panel = document.getElementById('heatmapNotesList');
+        const badge = document.getElementById('notesBadge');
+        if (!panel) return;
+
+        const entries = Object.entries(noteMap).sort((a, b) => a[0].localeCompare(b[0]));
+
+        if (badge) {
+            if (entries.length > 0) {
+                badge.textContent = entries.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+
+        if (entries.length === 0) {
+            panel.innerHTML = '<p class="text-xs text-amber-500 italic">Belum ada catatan untuk tahun ini.</p>';
+            return;
+        }
+
+        let html = '';
+        entries.forEach(([dateStr, noteText]) => {
+            const d = new Date(dateStr);
+            const formattedDate = d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+            html += `<div class="flex items-start gap-3 bg-white/80 p-3 rounded-xl border border-amber-100/60 hover:shadow-sm hover:border-amber-200 transition-all group" id="noteCard-${dateStr}">
+                <div class="flex-shrink-0 mt-0.5 cursor-pointer" onclick="openHeatmapDrillDown('${dateStr}')">
+                    <div class="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                </div>
+                <div class="flex-1 min-w-0 cursor-pointer" onclick="openHeatmapDrillDown('${dateStr}')">
+                    <p class="text-[11px] font-bold text-amber-700 group-hover:text-amber-800 transition-colors">${formattedDate}</p>
+                    <p class="text-xs text-slate-600 mt-0.5 line-clamp-2">${noteText}</p>
+                </div>
+                <div class="flex-shrink-0 flex items-center gap-1 mt-1">
+                    <button onclick="event.stopPropagation(); deleteHeatmapNote('${dateStr}')" title="Hapus catatan" class="p-1.5 rounded-lg text-slate-300 hover:text-rose-500 hover:bg-rose-50 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </button>
+                    <button onclick="openHeatmapDrillDown('${dateStr}')" title="Lihat detail" class="p-1.5 rounded-lg text-slate-300 hover:text-amber-500 hover:bg-amber-50 transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+                    </button>
+                </div>
+            </div>`;
+        });
+        panel.innerHTML = html;
+    }
+
+    // --- Toggle Notes Panel Visibility ---
+    window.toggleHeatmapNotes = function () {
+        const panel = document.getElementById('heatmapNotesPanel');
+        if (!panel) return;
+        panel.classList.toggle('hidden');
+    };
+
+    // --- Delete a Note via AJAX ---
+    window.deleteHeatmapNote = function (dateStr) {
+        // Find the branch_code from the heatmap data
+        const allData = window._heatmapData || [];
+        const entry = allData.find(d => d.date === dateStr);
+        const branchCode = entry ? entry.branch_code : (document.getElementById('heatmapBranchFilter')?.value || 'WARR');
+
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+        fetch('/dashboard/notes', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': csrfToken,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ date: dateStr, branch_code: branchCode })
+        })
+        .then(res => res.json())
+        .then(result => {
+            if (result.success) {
+                // Remove note from local heatmapData so the dot indicator disappears
+                const idx = allData.findIndex(d => d.date === dateStr);
+                if (idx !== -1) allData[idx].note = '';
+
+                // Animate card removal
+                const card = document.getElementById('noteCard-' + dateStr);
+                if (card) {
+                    card.style.transition = 'all 0.3s ease';
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateX(20px)';
+                    setTimeout(() => {
+                        card.remove();
+
+                        // Update badge count
+                        const badge = document.getElementById('notesBadge');
+                        const remaining = document.querySelectorAll('[id^="noteCard-"]').length;
+                        if (badge) {
+                            if (remaining > 0) {
+                                badge.textContent = remaining;
+                            } else {
+                                badge.classList.add('hidden');
+                                const panel = document.getElementById('heatmapNotesList');
+                                if (panel) panel.innerHTML = '<p class="text-xs text-amber-500 italic">Belum ada catatan untuk tahun ini.</p>';
+                            }
+                        }
+                    }, 300);
+                }
+
+                // Re-render heatmap to remove dot indicator
+                const yearEl = document.getElementById('heatmapYearFilter');
+                const targetYear = yearEl ? yearEl.value : new Date().getFullYear();
+                renderHeatmap(targetYear, 'year');
+            }
+        })
+        .catch(err => console.error('Delete note failed:', err));
     };
 
     window.showHeatmapTooltip = (e, dateStr, val) => {
