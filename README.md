@@ -680,7 +680,7 @@ EXIT;
 
 ```bash
 # Buka file .env dengan editor
-nano .env
+nano/vim .env
 # atau
 code .env  # jika menggunakan VS Code
 ```

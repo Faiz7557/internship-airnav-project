@@ -235,7 +235,7 @@
 
              <!-- Card 3: Capacity Utilization -->
              <x-kpi-card 
-                title="Kesehatan Kapasitas" 
+                title="Utilisasi Kapasitas" 
                 value="{{ $capacityUtilization }}%" 
                 iconBg="{{ $capacityUtilization > 80 ? 'bg-rose-50' : ($capacityUtilization > 60 ? 'bg-amber-50' : 'bg-emerald-50') }}" 
                 iconColor="{{ $capacityUtilization > 80 ? 'text-rose-500' : ($capacityUtilization > 60 ? 'text-amber-500' : 'text-emerald-500') }}"
